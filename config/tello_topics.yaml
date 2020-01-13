@@ -1,0 +1,4 @@
+vel_topic: '/tello/cmd_vel'
+cam_topic: '/tello/image_raw'
+takeoff_topic: '/tello/takeoff'
+land_topic: '/tello/land'

@@ -1,0 +1,4 @@
+vel_topic: '/bebop/cmd_vel'
+cam_topic: '/bebop/image_raw'
+takeoff_topic: '/bebop/takeoff'
+land_topic: '/bebop/land'
