@@ -20,5 +20,5 @@
         <node pkg="image_transport" name="image_compressed" type="republish" args="raw in:=image_raw compressed out:=image_raw" />
     </group> -->
 
-  <node pkg="viscon" name="visual_simple_pid" type="simple_control.py" output="screen"/>
+  <node pkg="viscon" name="visual_simple_pid" type="slam_control.py" output="screen"/>
 </launch>
