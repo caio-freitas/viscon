@@ -8,10 +8,9 @@ rospy.init_node("drone_lost")
 
 takeoff = rospy.Publisher('/tello/takeoff',Empty, queue_size=1)
 land = rospy.Publisher('/tello/land', Empty, queue_size=10)
-yaw = rospy.Publisher('/tello/cmd_vel', Twist,queue_size=10)
+yaw = rospy.Publisher('/tello/cmd_vel', Twist, queue_size=10)
 rate = rospy.Rate(hz=10)
 velocity = Twist()
-
 
 def set_velocity(w):
     velocity.linear.x = 0

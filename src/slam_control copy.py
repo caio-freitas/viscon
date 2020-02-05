@@ -28,7 +28,8 @@ class VisCon():
         # Publishers
         self.vel_pub = rospy.Publisher(self.vel_topic, Twist, queue_size=1)
         # Subscribers
-        self.pose_sub = rospy.Subscriber('/orb_slam2_mono/pose', PoseStamped, self.pose_callback)
+        self.slam_pose_sub = rospy.Subscriber('/orb_slam2_mono/pose', PoseStamped, self.pose_callback)
+        self.cmd_pose_sub = rospy.Subscriber('/viscon/set_position', Pose, self.set_pose_callback)
         self.last_time = time.time()
         self.delay = 0
         # Servers
@@ -49,6 +50,12 @@ class VisCon():
         self.pid_x.output_limits = self.pid_y.output_limits = (-1, 1) # output value will be between -1 and 1
         self.pid_z.output_limits = (-0.8, 0.8)  # output value will be between -0.8 and 0.8
 
+    def set_pose_callback(self, pose_data):
+        self.set_goal_pose(pose_data.position.x,
+                        pose_data.position.y,
+                        pose_data.position.z,
+                        pose_data.orientation.z)
+
     def set_goal_pose(self, x, y, z, w):
         self.pid_x.setpoint = x
         self.pid_y.setpoint = y
@@ -64,9 +71,9 @@ class VisCon():
     def pose_callback(self, pose_obj):
         self.current_pose = pose_obj
 
-        self.current_pose.pose.position.x = self.scale_factor * self.current_pose.pose.position.x
-        self.current_pose.pose.position.x = self.scale_factor * self.current_pose.pose.position.y
-        self.current_pose.pose.position.x = self.scale_factor * self.current_pose.pose.position.z
+        self.current_pose.pose.position.x = self.current_pose.pose.position.x
+        self.current_pose.pose.position.x = self.current_pose.pose.position.y
+        self.current_pose.pose.position.x = self.current_pose.pose.position.z
     
         self.velocity.linear.x = self.pid_x(self.current_pose.pose.position.x)
         self.velocity.linear.y = self.pid_y(self.current_pose.pose.position.y)
@@ -99,10 +106,6 @@ class VisCon():
         #print(config)
         self.scale_factor = config.scale_factor
 
-        self.set_goal_pose(config.position_x,
-                            config.position_y,
-                            config.position_z,
-                            config.position_w)
 
         return config
 
@@ -125,7 +128,6 @@ class VisCon():
                 t += 1/60.0
             t=0
             self.rate.sleep()
-
 
 
 if __name__ == "__main__":

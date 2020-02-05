@@ -39,9 +39,9 @@ class VisCon():
         self.scale_factor = 1
         self.is_losted = True
         # PIDs
-        self.pid_x = PID(0.1, 0, 0)
+        self.pid_x = PID(0.1, 0, 0)#size
         self.pid_y = PID(0.01, 0, 0)
-        self.pid_z = PID(0.05, 0, 0) #size
+        self.pid_z = PID(-0.1, 0, 0) # Negative parameters (CV's -y -> Frame's +z)
         self.pid_w = PID(0, 0, 0) #orientation
 
         self.pid_x.output_limits = self.pid_y.output_limits = (-1, 1) # output value will be between -1 and 1
@@ -62,11 +62,11 @@ class VisCon():
     def detection_callback(self, vector_data):
         self.detection = vector_data
 
-        self.velocity.linear.x = self.pid_x(self.detection.vector.x)
-        self.velocity.linear.y = self.pid_y(self.detection.vector.y)
-        self.velocity.linear.z = self.pid_z(self.detection.vector.z)
+        self.velocity.linear.x = self.pid_x(self.detection.vector.z)
+        self.velocity.linear.y = self.pid_y(self.detection.vector.x)
+        self.velocity.linear.z = self.pid_z(self.detection.vector.y) # PID z must have negative parameters
         self.velocity.angular.z = 0 # TODO implement self.pid_w(orientation)
-
+        
         self.delay = time.time() - self.last_time
         self.is_losted = self.delay > 1
         if not self.is_losted:
@@ -106,9 +106,8 @@ class VisCon():
 
             t = 0
             while self.is_losted:
-                self.set_goal_vel(0, 0, 0, np.sin(t))
-                t += 2*np.pi/(60.0*5)
-                self.rate.sleep()
+                self.set_goal_vel(0, 0, 0, 0)
+                self.vel_pub.publish(velocity)
             self.rate.sleep()
 
 
