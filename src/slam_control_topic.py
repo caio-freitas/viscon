@@ -42,10 +42,10 @@ class VisCon():
         self.scale_factor = 1
         self.is_losted = True
         # PIDs
-        self.pid_x = PID(1, 0, 0)
-        self.pid_y = PID(1, 0, 0)
-        self.pid_z = PID(0.8, 0, 0)
-        self.pid_w = PID(0, 0, 0)
+        self.pid_x = PID(4, 0, 0)
+        self.pid_y = PID(4, 0, 0)
+        self.pid_z = PID(2, 0, 0)
+        self.pid_w = PID(1, 0, 0)
 
         self.pid_x.output_limits = self.pid_y.output_limits = (-1, 1) # output value will be between -1 and 1
         self.pid_z.output_limits = (-0.8, 0.8)  # output value will be between -0.8 and 0.8

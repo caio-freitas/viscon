@@ -39,8 +39,8 @@ class VisCon():
         self.scale_factor = 1
         self.is_losted = True
         # PIDs
-        self.pid_x = PID(0.1, 0, 0)#size
-        self.pid_y = PID(0.01, 0, 0)
+        self.pid_x = PID(0.08, 0, 0)    # size
+        self.pid_y = PID(0.1, 0, 0)
         self.pid_z = PID(-0.1, 0, 0) # Negative parameters (CV's -y -> Frame's +z)
         self.pid_w = PID(0, 0, 0) #orientation
 
