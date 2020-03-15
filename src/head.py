@@ -1,68 +1,84 @@
 #!/usr/bin/env python
-
+import ros_numpy
+import numpy as np
+import json
 import rospy
-import sys, tty
-import termios
+import rospkg
 import select
-from std_msgs.msg import ColorRGBA
+from std_msgs.msg import ColorRGBA, Bool
 from geometry_msgs.msg import Pose, PoseStamped, Vector3
+from nav_msgs.msg import Path
 from visualization_msgs.msg import Marker
+
+from rospy_message_converter import json_message_converter
 
 import time
 
 class Head():
     def __init__(self):
         # ROS setup
-        rospy.init_node("head")
+        rospy.init_node("control")
         self.rate = rospy.Rate(60)
 
+        self.running_sub = rospy.Subscriber('/control/set_running_state', Bool, self.running_cb)
         self.slam_pose_sub = rospy.Subscriber('/orb_slam2_mono/pose', PoseStamped, self.pose_callback)
         self.cmd_pose_pub = rospy.Publisher('/viscon/set_position', Pose, queue_size=1)
         self.visual_marker_pub = rospy.Publisher('/visualization_marker', Marker, queue_size=10)
-        
+        self.path_pub = rospy.Publisher('/viscon/path', Path, queue_size=5)
+        self.running = False
         self.current_pose = PoseStamped()
+        self.goal = Pose()
 
+        self.path = Path()
+        self.path.header.frame_id = "map"
+            
         self.current_pose_marker = Marker()
         self.current_pose_marker.header.frame_id = "map"
         self.current_pose_marker.ns = "/"
         self.current_pose_marker.id = 0
         self.current_pose_marker.type = Marker.SPHERE
         self.current_pose_marker.action = Marker.MODIFY
-        self.current_pose_marker.scale = Vector3(0.2, 0.2, 0.2)
+        self.current_pose_marker.scale = Vector3(0.1, 0.1, 0.1)
         self.current_pose_marker.color = ColorRGBA(r=0, g=1, b=0, a=0.9)
         self.current_pose_marker.lifetime = rospy.Duration(secs=15)
+        self.PRECISION = 0.01 # out of scale, for now
 
-        self.settings = termios.tcgetattr(sys.stdin)
         self.poses = []
 
-    def getKey(self):
-        tty.setraw(sys.stdin.fileno())
-        select.select([sys.stdin], [], [], 0)
-        key = sys.stdin.read(1)
-        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.settings)
-        return key
+
+    def running_cb(self, data):
+        self.running = data.data
+        
+
 
     def pose_callback(self, data):
         self.current_pose = data
 
 
-    def go_to_pose(self, data):
-        goal = Pose()
-        goal.position.x = data.pose.position.x
-        goal.position.y = data.pose.position.y
-        goal.position.z = data.pose.position.z
+    def is_equal(self, pose, goalpose):
+        pose_np = ros_numpy.numpify(pose.pose)
+        goalpose_np = ros_numpy.numpify(goalpose)
+        return np.linalg.norm(goalpose_np - pose_np) < self.PRECISION
 
-        self.current_pose_marker.pose = goal
+    def go_to_pose(self, data):
+        self.goal.position.x = data.position.x
+        self.goal.position.y = data.position.y
+        self.goal.position.z = data.position.z
+
+        self.current_pose_marker.pose = self.goal
         self.current_pose_marker.id += 1
         self.current_pose_marker.header.stamp = rospy.Time()
-        self.visual_marker_pub.publish(self.current_pose_marker)
-
+        
         init_time = time.time()
-        while not time.time() - init_time > 20 and not rospy.is_shutdown():
-            rospy.logwarn("Going to position: "+ str(data.pose.position.x) + ", " + str(data.pose.position.y) + ", " + str(data.pose.position.z))
+        while not time.time() - init_time > 20 and not rospy.is_shutdown() and not self.is_equal(self.current_pose, self.goal):
+            self.visual_marker_pub.publish(self.current_pose_marker)
+            rospy.logwarn("Going to position: "+ str(self.goal.position.x) + ", " + str(self.goal.position.y) + ", " + str(self.goal.position.z))
             rospy.logwarn("Currently at: "+ str(self.current_pose.pose.position.x) + ", " + str(self.current_pose.pose.position.y) + ", " + str(self.current_pose.pose.position.z))
-            self.cmd_pose_pub.publish(goal)
+            self.cmd_pose_pub.publish(self.goal) #rviz show next pose
+            self.path_pub.publish(self.path) #rviz show path
             self.rate.sleep()
+            if not self.running:
+                break
 
 
     def save_pose(self):
@@ -70,31 +86,39 @@ class Head():
     
 
     def run(self):
-        s = 's'
-        for i in range(3):
-            s = input("Save position (s):\n")
-            pos = Pose()
-            pos.position.x = self.current_pose.pose.position.x
-            pos.position.y = self.current_pose.pose.position.y
-            pos.position.z = self.current_pose.pose.position.z
-            
-            print(s)
-            if str(s) == 's':
-                self.save_pose()
-        for i in range(3):
-
-            self.go_to_pose(self.poses[i])
-    
+        rospack = rospkg.RosPack()
+        filename = str(rospack.get_path('viscon')+'/config/recorded_routines.json')
+        
+        with open(filename, 'r') as json_data_file:
+            try:
+                self.positions_data = json.load(json_data_file)
+            except Exception as e:
+                print(e)
+                self.positions_data = {}
+        for i in range(len(self.positions_data)):
+            json_to_pose = json_message_converter.convert_json_to_ros_message('geometry_msgs/Pose', self.positions_data[i])
+            json_to_pose_stamped = PoseStamped()
+            json_to_pose_stamped.pose = json_to_pose
+            self.path.poses.append(json_to_pose_stamped)
+        # if self.running:
+        #     for i in range(len(positions_data)):
+        #         self.go_to_pose(positions_data[str(i)])
+        #         if not self.running:
+        #             break
+        while not rospy.is_shutdown():
+            if self.running:
+                rospy.loginfo("Running...")
+                for i in range(len(self.positions_data)):
+                    json_to_pose = json_message_converter.convert_json_to_ros_message('geometry_msgs/Pose', self.positions_data[i])
+                    self.go_to_pose(json_to_pose)
+                    if not self.running:
+                        break
+            self.rate.sleep()
+        
 
 def main():
     h = Head()
-    while not rospy.is_shutdown():
-        key = h.getKey()
-        print(key)
-        if key=='q' or ord(key) == 32:
-            break
-        if ord(key) == 32: # spacebar
-            break
+
 if __name__ == "__main__":
     # main()
     h = Head()

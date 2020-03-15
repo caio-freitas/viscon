@@ -11,14 +11,15 @@ import time
 import numpy as np
 
 class VisCon():
-
+    
     def __init__(self):
         # ROS setup
         rospy.init_node('ObjectBasedController')
         self.rate = rospy.Rate(60)
 
         # ROS Parameters
-        self.vel_topic = rospy.get_param("/vel_topic")
+        self.vel_topic = "/tello/cmd_vel"
+        #self.vel_topic = rospy.get_param("/vel_topic")
         #self.pose_topic = rospy.get_param("/pose_topic")
 
         # self.pid_config_file = rospy.get_param("~pid_config_file")
@@ -38,20 +39,21 @@ class VisCon():
         self.velocity = Twist()
         self.scale_factor = 1
         self.is_losted = True
+        self.last_time = time.time()
         # PIDs
-        self.pid_x = PID(0.08, 0, 0)    # size
-        self.pid_y = PID(0.1, 0, 0)
-        self.pid_z = PID(-0.1, 0, 0) # Negative parameters (CV's -y -> Frame's +z)
-        self.pid_w = PID(0, 0, 0) #orientation
+        self.pid_x = PID(0, 0, 0)    # size
+        self.pid_y = PID(0, 0, 0)
+        self.pid_z = PID(0, 0, 0) # Negative parameters (CV's -y -> Frame's +z)
+        self.pid_w = PID(0, 0, 0) # Orientation
 
         self.pid_x.output_limits = self.pid_y.output_limits = (-1, 1) # output value will be between -1 and 1
         self.pid_z.output_limits = (-0.8, 0.8)  # output value will be between -0.8 and 0.8
         
     def set_goal_pose(self, x, y, z, w):
-        self.pid_x.setpoint = x
-        self.pid_y.setpoint = y
-        self.pid_z.setpoint = z # size
-        self.pid_w.setpoint = w # orientation
+        self.pid_x.setpoint = 0 # 960.0/2 #x
+        self.pid_y.setpoint = 960.0/2 #x
+        self.pid_z.setpoint = -720.0/2 # y size
+        self.pid_w.setpoint = 0 # orientation
 
     def set_goal_vel(self, vx, vy, vz, vw):
         self.velocity.linear.x = vx
@@ -62,9 +64,9 @@ class VisCon():
     def detection_callback(self, vector_data):
         self.detection = vector_data
 
-        self.velocity.linear.x = self.pid_x(self.detection.vector.z)
+        self.velocity.linear.x = self.pid_x(0)#self.detection.vector.z)
         self.velocity.linear.y = self.pid_y(self.detection.vector.x)
-        self.velocity.linear.z = self.pid_z(self.detection.vector.y) # PID z must have negative parameters
+        self.velocity.linear.z = self.pid_z(-self.detection.vector.y) # PID z must have negative parameters
         self.velocity.angular.z = 0 # TODO implement self.pid_w(orientation)
         
         self.delay = time.time() - self.last_time
@@ -103,11 +105,10 @@ class VisCon():
     def run(self):
         self.set_goal_pose(0, 0, 0, 0)
         while not rospy.is_shutdown():
-
             t = 0
             while self.is_losted:
                 self.set_goal_vel(0, 0, 0, 0)
-                self.vel_pub.publish(velocity)
+                self.vel_pub.publish(self.velocity)
             self.rate.sleep()
 
 

@@ -42,7 +42,7 @@ class VisCon():
         self.is_losted = True
         # PIDs
         self.pid_x = PID(0.1, 0, 0)
-        self.pid_y = PID(0.01, 0, 0)
+        self.pid_y = PID(0.1, 0, 0)
         self.pid_z = PID(0.05, 0, 0)
         self.pid_w = PID(0, 0, 0)
 
@@ -82,8 +82,7 @@ class VisCon():
         self.last_time = time.time()
         rospy.loginfo(self.velocity) # debug
 
-
-
+    
     def cfg_callback(self, config, level):
         
         if hasattr(self, 'pid_x'):

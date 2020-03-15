@@ -19,6 +19,6 @@
 
         <node pkg="image_transport" name="image_compressed" type="republish" args="raw in:=image_raw compressed out:=image_raw" />
     </group> -->
-  <rosparam command="load" file="$(find control_gui)/config/slam_topics.yaml" />
-  <node pkg="viscon" name="visual_simple_pid" type="control.py" output="screen"/>
+
+  <node pkg="viscon" name="manual_control" type="teleop_twist_keyboard.py" output="screen"/>
 </launch>
