@@ -34,4 +34,17 @@ We can also control our MAV based on it's position relative to an object detecte
 
 ### Architecture
 ![](./media/cv_graph.png)
+
+### Procedure for Tello
+* Run tello driver with `roslaunch tello_driver tello_node.launch`
+* Set camera parameters to worse image quality (frequency is key to visual odometry algorithms) with `rosrun dynamic_reconfigure dynparam load /tello/tello [viscon]/config/dump.yaml`
+* Run manual control with `roslaunch viscon manual.launch` and take it of pressing '{'
+* Run `cv_detection`'s `h_det.py` with `rosrun cv_detection h_det.py`
+    * This node detects an H in the webcam image and publishes it's position in `/cv_detection/detection` as a `Vector3`, where
+        * x: x coordinate of H's center
+        * y: y coordinate of H's center
+        * z: ratio between H's area and the whole image
+
+* Run `control` node with `rosrun viscon cv_control.py`
+
 To use dynamic_reconfigure, `rosrun rqt_gui rqt_gui -s reconfigure` along with the simple_control.py node
