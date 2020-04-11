@@ -15,7 +15,7 @@ class VisCon():
 
     def __init__(self):
         # ROS setup
-        rospy.init_node('VisualOdometryController')
+        rospy.init_node('control')
         self.rate = rospy.Rate(60)
         self.running = False
         # ROS Parameters

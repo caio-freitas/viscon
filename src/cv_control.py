@@ -14,7 +14,7 @@ class VisCon():
     
     def __init__(self):
         # ROS setup
-        rospy.init_node('ObjectBasedController')
+        rospy.init_node('control')
         self.rate = rospy.Rate(60)
 
         # ROS Parameters

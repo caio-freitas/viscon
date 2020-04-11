@@ -17,7 +17,7 @@ import time
 class Head():
     def __init__(self):
         # ROS setup
-        rospy.init_node("control")
+        rospy.init_node("head")
         self.rate = rospy.Rate(60)
 
         self.running_sub = rospy.Subscriber('/control/set_running_state', Bool, self.running_cb)
