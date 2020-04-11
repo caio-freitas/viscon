@@ -74,8 +74,8 @@ class Head():
             self.visual_marker_pub.publish(self.current_pose_marker)
             rospy.logwarn("Going to position: "+ str(self.goal.position.x) + ", " + str(self.goal.position.y) + ", " + str(self.goal.position.z))
             rospy.logwarn("Currently at: "+ str(self.current_pose.pose.position.x) + ", " + str(self.current_pose.pose.position.y) + ", " + str(self.current_pose.pose.position.z))
-            self.cmd_pose_pub.publish(self.goal) #rviz show next pose
-            self.path_pub.publish(self.path) #rviz show path
+            self.cmd_pose_pub.publish(self.goal)    #rviz show next pose
+            self.path_pub.publish(self.path)        #rviz show path
             self.rate.sleep()
             if not self.running:
                 break

@@ -19,9 +19,10 @@ class VisCon():
         self.rate = rospy.Rate(60)
         self.running = False
         # ROS Parameters
-        self.vel_topic = rospy.get_param("/vel_topic")
-        self.pose_topic = rospy.get_param("/pose_topic")
-
+        #self.vel_topic = rospy.get_param("/vel_topic")
+        self.vel_topic = "/tello/cmd_vel"
+        #self.pose_topic = rospy.get_param("/pose_topic")
+        self.pose_topic = "/orb_slam2_mono/pose"
         # self.pid_config_file = rospy.get_param("~pid_config_file")
         # self.calibrate_pid = rospy.get_param('~calibrate_pid',False)
 
@@ -43,9 +44,9 @@ class VisCon():
         self.scale_factor = 1
         self.is_losted = True
         # PIDs
-        self.pid_x = PID(0.8, 0.01, 0.05)
-        self.pid_y = PID(0.8, 0.01, 0.05)
-        self.pid_z = PID(0.8, 0.008, 0.01)
+        self.pid_x = PID(0.4, 0.01, 0.05)
+        self.pid_y = PID(0.4, 0.01, 0.05)
+        self.pid_z = PID(0.3, 0.008, 0.01)
         self.pid_w = PID(0.5, 0, 0.01)
 
         self.pid_x.output_limits = self.pid_y.output_limits = (-0.8, 0.8) # output value will be between -1 and 1
@@ -102,7 +103,7 @@ class VisCon():
         self.last_time = time.time()
 
 
-
+    ######### Dynamic Reconfigure
     # def cfg_callback(self, config, level):
         
     #     if hasattr(self, 'pid_x'):

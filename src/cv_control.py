@@ -41,16 +41,16 @@ class VisCon():
         self.is_losted = True
         self.last_time = time.time()
         # PIDs
-        self.pid_x = PID(0, 0, 0)    # size
-        self.pid_y = PID(0, 0, 0)
-        self.pid_z = PID(0, 0, 0) # Negative parameters (CV's -y -> Frame's +z)
+        self.pid_x = PID(0.00001, 0, 0)    # size
+        self.pid_y = PID(0.00081, 0.00001, 0)
+        self.pid_z = PID(-0.00081, -0.00001, 0) # Negative parameters (CV's -y -> Frame's +z)
         self.pid_w = PID(0, 0, 0) # Orientation
 
-        self.pid_x.output_limits = self.pid_y.output_limits = (-1, 1) # output value will be between -1 and 1
-        self.pid_z.output_limits = (-0.8, 0.8)  # output value will be between -0.8 and 0.8
+        self.pid_x.output_limits = self.pid_y.output_limits = (-0.3, 0.3) # output value will be between -1 and 1
+        self.pid_z.output_limits = (-0.3, 0.3)  # output value will be between -0.8 and 0.8
         
     def set_goal_pose(self, x, y, z, w):
-        self.pid_x.setpoint = 0 # 960.0/2 #x
+        self.pid_x.setpoint = 0.01 # 1% of the image area
         self.pid_y.setpoint = 960.0/2 #x
         self.pid_z.setpoint = -720.0/2 # y size
         self.pid_w.setpoint = 0 # orientation
@@ -64,18 +64,25 @@ class VisCon():
     def detection_callback(self, vector_data):
         self.detection = vector_data
 
-        self.velocity.linear.x = self.pid_x(0)#self.detection.vector.z)
-        self.velocity.linear.y = self.pid_y(self.detection.vector.x)
-        self.velocity.linear.z = self.pid_z(-self.detection.vector.y) # PID z must have negative parameters
-        self.velocity.angular.z = 0 # TODO implement self.pid_w(orientation)
         
         self.delay = time.time() - self.last_time
         self.is_losted = self.delay > 1
         if not self.is_losted:
+            self.velocity.linear.x = self.pid_x(self.detection.vector.z)
+            self.velocity.linear.y = self.pid_y(self.detection.vector.x)
+            self.velocity.linear.z = self.pid_z(-self.detection.vector.y) # PID z must have negative parameters
+            self.velocity.angular.z = 0 # TODO implement self.pid_w(orientation)
+        
             self.vel_pub.publish(self.velocity)
 
         else:
-            rospy.loginfo("Orb slam timeout: {}".format(str(self.delay)))
+            rospy.loginfo("Timeout: {}".format(str(self.delay)))
+            self.velocity.linear.x = 0
+            self.velocity.linear.y = 0
+            self.velocity.linear.z = 0
+            self.velocity.angular.z = 0 # TODO implement self.pid_w(orientation)
+        
+            self.vel_pub.publish(self.velocity)
             # Assume velocity message will be treated
         self.last_time = time.time()
         rospy.loginfo(self.velocity) # debug
