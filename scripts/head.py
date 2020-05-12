@@ -70,7 +70,7 @@ class Head():
         self.current_pose_marker.header.stamp = rospy.Time()
         
         init_time = time.time()
-        while not time.time() - init_time > 20 and not rospy.is_shutdown() and not self.is_equal(self.current_pose, self.goal):
+        while not time.time() - init_time > 10 and not rospy.is_shutdown() and not self.is_equal(self.current_pose, self.goal):
             self.visual_marker_pub.publish(self.current_pose_marker)
             rospy.logwarn("Going to position: "+ str(self.goal.position.x) + ", " + str(self.goal.position.y) + ", " + str(self.goal.position.z))
             rospy.logwarn("Currently at: "+ str(self.current_pose.pose.position.x) + ", " + str(self.current_pose.pose.position.y) + ", " + str(self.current_pose.pose.position.z))
@@ -79,7 +79,6 @@ class Head():
             self.rate.sleep()
             if not self.running:
                 break
-
 
     def save_pose(self):
         self.poses.append(self.current_pose)
