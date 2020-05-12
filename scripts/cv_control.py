@@ -1,7 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import rospy
 
-from geometry_msgs.msg import Twist, Pose, PoseStamped
+from geometry_msgs.msg import Twist, Vector3Stamped
 
 from dynamic_reconfigure.server import Server
 from viscon.cfg import ControllerConfig
@@ -11,14 +11,15 @@ import time
 import numpy as np
 
 class VisCon():
-
+    
     def __init__(self):
         # ROS setup
-        rospy.init_node('VisualOdometryController')
+        rospy.init_node('control')
         self.rate = rospy.Rate(60)
 
         # ROS Parameters
-        self.vel_topic = rospy.get_param("/vel_topic")
+        self.vel_topic = "/tello/cmd_vel"
+        #self.vel_topic = rospy.get_param("/vel_topic")
         #self.pose_topic = rospy.get_param("/pose_topic")
 
         # self.pid_config_file = rospy.get_param("~pid_config_file")
@@ -28,32 +29,31 @@ class VisCon():
         self.vel_pub = rospy.Publisher(self.vel_topic, Twist, queue_size=1)
 
         # Subscribers
-        self.pose_sub = rospy.Subscriber('/orb_slam2_mono/pose', PoseStamped, self.pose_callback)
+        self.detection_sub = rospy.Subscriber('/cv_detection/detection', Vector3Stamped, self.detection_callback)
         self.last_time = time.time()
         self.delay = 0
         # Servers
         self.cfg_srv = Server(ControllerConfig, self.cfg_callback)
 
-        # Attributes    
-        self.goal_pose = PoseStamped()
-        self.current_pose = PoseStamped()
+        # Attributes
         self.velocity = Twist()
         self.scale_factor = 1
         self.is_losted = True
+        self.last_time = time.time()
         # PIDs
-        self.pid_x = PID(0.1, 0, 0)
-        self.pid_y = PID(0.01, 0, 0)
-        self.pid_z = PID(0.05, 0, 0)
-        self.pid_w = PID(0, 0, 0)
+        self.pid_x = PID(0.00001, 0, 0)    # size
+        self.pid_y = PID(0.00081, 0.00001, 0)
+        self.pid_z = PID(-0.00081, -0.00001, 0) # Negative parameters (CV's -y -> Frame's +z)
+        self.pid_w = PID(0, 0, 0) # Orientation
 
-        self.pid_x.output_limits = self.pid_y.output_limits = (-1, 1) # output value will be between -1 and 1
-        self.pid_z.output_limits = (-0.8, 0.8)  # output value will be between -0.8 and 0.8
-
+        self.pid_x.output_limits = self.pid_y.output_limits = (-0.3, 0.3) # output value will be between -1 and 1
+        self.pid_z.output_limits = (-0.3, 0.3)  # output value will be between -0.8 and 0.8
+        
     def set_goal_pose(self, x, y, z, w):
-        self.pid_x.setpoint = x
-        self.pid_y.setpoint = y
-        self.pid_z.setpoint = z
-        self.pid_w.setpoint = w
+        self.pid_x.setpoint = 0.01 # 1% of the image area
+        self.pid_y.setpoint = 960.0/2 #x
+        self.pid_z.setpoint = -720.0/2 # y size
+        self.pid_w.setpoint = 0 # orientation
 
     def set_goal_vel(self, vx, vy, vz, vw):
         self.velocity.linear.x = vx
@@ -61,25 +61,28 @@ class VisCon():
         self.velocity.linear.z = vz
         self.velocity.angular.z = vw # not volkswagen
 
-    def pose_callback(self, pose_obj):
-        self.current_pose = pose_obj
+    def detection_callback(self, vector_data):
+        self.detection = vector_data
 
-        self.current_pose.pose.position.x = self.scale_factor * self.current_pose.pose.position.x
-        self.current_pose.pose.position.x = self.scale_factor * self.current_pose.pose.position.y
-        self.current_pose.pose.position.x = self.scale_factor * self.current_pose.pose.position.z
-    
-        self.velocity.linear.x = self.pid_x(self.current_pose.pose.position.x)
-        self.velocity.linear.y = self.pid_y(self.current_pose.pose.position.y)
-        self.velocity.linear.z = self.pid_z(self.current_pose.pose.position.z)
-        self.velocity.angular.z = self.pid_w(self.current_pose.pose.orientation.z)
-
+        
         self.delay = time.time() - self.last_time
         self.is_losted = self.delay > 1
         if not self.is_losted:
+            self.velocity.linear.x = self.pid_x(self.detection.vector.z)
+            self.velocity.linear.y = self.pid_y(self.detection.vector.x)
+            self.velocity.linear.z = self.pid_z(-self.detection.vector.y) # PID z must have negative parameters
+            self.velocity.angular.z = 0 # TODO implement self.pid_w(orientation)
+        
             self.vel_pub.publish(self.velocity)
 
         else:
-            rospy.loginfo("Orb slam timeout: {}".format(str(self.delay)))
+            rospy.loginfo("Timeout: {}".format(str(self.delay)))
+            self.velocity.linear.x = 0
+            self.velocity.linear.y = 0
+            self.velocity.linear.z = 0
+            self.velocity.angular.z = 0 # TODO implement self.pid_w(orientation)
+        
+            self.vel_pub.publish(self.velocity)
             # Assume velocity message will be treated
         self.last_time = time.time()
         rospy.loginfo(self.velocity) # debug
@@ -109,12 +112,10 @@ class VisCon():
     def run(self):
         self.set_goal_pose(0, 0, 0, 0)
         while not rospy.is_shutdown():
-
             t = 0
             while self.is_losted:
-                self.set_goal_vel(0, 0, 0, np.sin(t))
-                t += 2*np.pi/(60.0*5)
-                self.rate.sleep()
+                self.set_goal_vel(0, 0, 0, 0)
+                self.vel_pub.publish(self.velocity)
             self.rate.sleep()
 
 

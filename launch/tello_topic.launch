@@ -1,6 +1,5 @@
 <launch>
-  <rosparam command="load" file="$(find control_gui)/config/tello_topics.yaml" />
-<!-- 
+  <rosparam command="load" file="$(find viscon)/config/tello_topics.yaml" />
   <arg name="tello_ip" default="192.168.10.1" />
     <arg name="tello_cmd_server_port" default="8889" />
     <arg name="local_cmd_client_port" default="8890" />
@@ -18,7 +17,7 @@
         </node>
 
         <node pkg="image_transport" name="image_compressed" type="republish" args="raw in:=image_raw compressed out:=image_raw" />
-    </group> -->
-  <rosparam command="load" file="$(find control_gui)/config/slam_topics.yaml" />
-  <node pkg="viscon" name="visual_simple_pid" type="control.py" output="screen"/>
+    </group>
+  
+  <node pkg="viscon" name="visual_simple_pid" type="slam_control_topic.py" output="screen" launch-prefix="xterm -e"/>
 </launch>
