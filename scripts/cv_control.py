@@ -7,18 +7,20 @@ from dynamic_reconfigure.server import Server
 from viscon.cfg import ControllerConfig
 
 from simple_pid import PID
+
 import time
 import numpy as np
 
 class VisCon():
-    
+
     def __init__(self):
         # ROS setup
         rospy.init_node('control')
         self.rate = rospy.Rate(60)
 
         # ROS Parameters
-        self.vel_topic = "/tello/cmd_vel"
+        # self.vel_topic = "/tello/cmd_vel" # Tello
+        self.vel_topic = "/mavros/setpoint_velocity/cmd_vel"
         #self.vel_topic = rospy.get_param("/vel_topic")
         #self.pose_topic = rospy.get_param("/pose_topic")
 
@@ -31,22 +33,23 @@ class VisCon():
         # Subscribers
         self.detection_sub = rospy.Subscriber('/cv_detection/detection', Vector3Stamped, self.detection_callback)
         self.last_time = time.time()
-        self.delay = 0
+
         # Servers
         self.cfg_srv = Server(ControllerConfig, self.cfg_callback)
 
         # Attributes
+        self.delay = 0
         self.velocity = Twist()
         self.scale_factor = 1
         self.is_losted = True
         self.last_time = time.time()
         # PIDs
-        self.pid_x = PID(0.00001, 0, 0)    # size
+        self.pid_x = PID(0.00001, 0, 0)         # size how close the drone is to the H
         self.pid_y = PID(0.00081, 0.00001, 0)
         self.pid_z = PID(-0.00081, -0.00001, 0) # Negative parameters (CV's -y -> Frame's +z)
         self.pid_w = PID(0, 0, 0) # Orientation
 
-        self.pid_x.output_limits = self.pid_y.output_limits = (-0.3, 0.3) # output value will be between -1 and 1
+        self.pid_x.output_limits = self.pid_y.output_limits = (-0.3, 0.3) # output value will be between -0.3 and 0.3
         self.pid_z.output_limits = (-0.3, 0.3)  # output value will be between -0.8 and 0.8
         
     def set_goal_pose(self, x, y, z, w):
@@ -63,7 +66,6 @@ class VisCon():
 
     def detection_callback(self, vector_data):
         self.detection = vector_data
-
         
         self.delay = time.time() - self.last_time
         self.is_losted = self.delay > 1
@@ -117,7 +119,6 @@ class VisCon():
                 self.set_goal_vel(0, 0, 0, 0)
                 self.vel_pub.publish(self.velocity)
             self.rate.sleep()
-
 
 
 if __name__ == "__main__":
