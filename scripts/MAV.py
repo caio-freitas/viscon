@@ -109,7 +109,7 @@ class MAV:
             self.set_position(self.drone_pose.pose.position.x, self.drone_pose.pose.position.y, 0)
             self.rate.sleep()
 
-        #while not self.drone_state.armed: TODO verify state
+        #while not self.drone_state.armed: Todo verify state
         rospy.logwarn("ARMING DRONE")
         self.arm(True)
         self.rate.sleep()
