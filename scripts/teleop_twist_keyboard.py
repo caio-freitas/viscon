@@ -98,11 +98,13 @@ def pose_callback(data):
 
 takeoff_topic = rospy.get_param("/takeoff_topic")
 land_topic = rospy.get_param("/land_topic")
+vel_topic = rospy.get_param("/vel_topic")
 pose_topic = "/orb_slam2_mono/pose"
 drone_pose = Pose()
 
-takeoff_pub = rospy.Publisher(takeoff_topic, Empty, queue_size=1)
-land_pub = rospy.Publisher(land_topic, Empty, queue_size=1)
+if takeoff_topic != '': # suppose it's mavros -> no takeoff topic
+    takeoff_pub = rospy.Publisher(takeoff_topic, Empty, queue_size=1)
+    land_pub = rospy.Publisher(land_topic, Empty, queue_size=1)
 
 auto_pub = rospy.Publisher('/control/set_running_state', Bool, queue_size=1)
 
@@ -112,7 +114,7 @@ pose_sub = rospy.Subscriber(pose_topic, PoseStamped, pose_callback)
 if __name__=="__main__":
     settings = termios.tcgetattr(sys.stdin)
 
-    pub = rospy.Publisher('tello/cmd_vel', Twist, queue_size = 1)
+    pub = rospy.Publisher(vel_topic, Twist, queue_size = 1)
     rospy.init_node('teleop_twist_keyboard')
 
     speed = rospy.get_param("~speed", 0.5)

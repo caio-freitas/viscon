@@ -1,0 +1,4 @@
+vel_topic: '/mavros/setpoint_velocity/cmd_vel'
+cam_topic: '/iris_fpv_cam/usb_cam/image_raw'
+takeoff_topic: ''
+land_topic: ''

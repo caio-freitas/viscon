@@ -18,8 +18,6 @@ class VisCon():
         rospy.init_node('control')
         self.rate = rospy.Rate(60)
 
-        self.running_state = False
-
         # ROS Parameters
         self.vel_topic = "/tello/cmd_vel" # Tello
         # self.vel_topic = "/mavros/setpoint_velocity/cmd_vel"
@@ -55,6 +53,8 @@ class VisCon():
         self.pid_x.output_limits = self.pid_y.output_limits = (-0.3, 0.3) # output value will be between -0.3 and 0.3
         self.pid_z.output_limits = (-0.3, 0.3)  # output value will be between -0.8 and 0.8
 
+
+    
     def set_goal_pose(self, x, y, z, w):
         self.pid_x.setpoint = 0.01 # 1% of the image area
         self.pid_y.setpoint = 960.0/2 #x

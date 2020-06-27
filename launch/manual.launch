@@ -1,5 +1,5 @@
 <launch>
-  <rosparam command="load" file="$(find viscon)/config/tello_topics.yaml" />
+  <rosparam command="load" file="$(find viscon)/config/mavros_topic.yaml" />
 <!-- 
   <arg name="tello_ip" default="192.168.10.1" />
     <arg name="tello_cmd_server_port" default="8889" />
