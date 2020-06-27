@@ -109,7 +109,7 @@ class MAV:
             self.set_position(self.drone_pose.pose.position.x, self.drone_pose.pose.position.y, 0)
             self.rate.sleep()
 
-        #while not self.drone_state.armed: TODO verify state
+        #while not self.drone_state.armed: Todo verify state
         rospy.logwarn("ARMING DRONE")
         self.arm(True)
         self.rate.sleep()
@@ -214,9 +214,9 @@ class MAV:
 
     def _disarm(self):
         rospy.logwarn("DISARM MAV")
-        if drone_pose.pose.position.z < TOL:
+        if self.drone_pose.pose.position.z < TOL:
             for i in range(3):
-                rospy.loginfo('Drone height' + str(drone_pose.pose.position.z))
+                rospy.loginfo('Drone height' + str(self.drone_pose.pose.position.z))
                 self.arm(False)
         else:
             rospy.logwarn("Altitude too high for disarming!")
