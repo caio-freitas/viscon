@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import rospy
-
-from geometry_msgs.msg import Twist, Vector3Stamped
+from cv_detection.msg import H_info
+from geometry_msgs.msg import Twist
 from std_msgs.msg import Bool
 
 from dynamic_reconfigure.server import Server
@@ -20,8 +20,6 @@ class VisCon():
         rospy.init_node('control')
         self.rate = rospy.Rate(60)
 
-<<<<<<< HEAD
-=======
         # State updater
         self.running_state = False
         self.running_sub = rospy.Subscriber("/cv_detection/set_running_state", Bool, self.running_callback)
@@ -39,33 +37,11 @@ class VisCon():
         self.vel_pub = rospy.Publisher(self.vel_topic, Twist, queue_size=1)
 
         # Subscribers
-        self.detection_sub = rospy.Subscriber('/cv_detection/detection', Vector3Stamped, self.detection_callback)
+        self.detection_sub = rospy.Subscriber('/cv_detection/detection', H_info, self.detection_callback)
                                                 #'/viscon/cv_control/set_running_state'
         self.last_time = time.time()
         rospy.init_node('control')
         self.rate = rospy.Rate(60)
-
-        # State updater
-        self.running_state = False
-        self.running_sub = rospy.Subscriber("/cv_detection/set_running_state", Bool, self.running_callback)
-
->>>>>>> 9f4f636bee520a325b521bf358d0a53c6d2575ea
-        # ROS Parameters
-        self.vel_topic = "/tello/cmd_vel" # Tello
-        # self.vel_topic = "/mavros/setpoint_velocity/cmd_vel"
-        #self.vel_topic = rospy.get_param("/vel_topic")
-        #self.pose_topic = rospy.get_param("/pose_topic")
-
-        # self.pid_config_file = rospy.get_param("~pid_config_file")
-        # self.calibrate_pid = rospy.get_param('~calibrate_pid',False)
-
-        # Publishers
-        self.vel_pub = rospy.Publisher(self.vel_topic, Twist, queue_size=1)
-
-        # Subscribers
-        self.detection_sub = rospy.Subscriber('/cv_detection/detection', Vector3Stamped, self.detection_callback)
-                                                #'/viscon/cv_control/set_running_state'
-        self.last_time = time.time()
 
         # Servers
         self.cfg_srv = Server(ControllerConfig, self.cfg_callback)
@@ -95,7 +71,7 @@ class VisCon():
         self.pid_x.setpoint = 0.01 # 1% of the image area
         self.pid_y.setpoint = 960.0/2 #x
         self.pid_z.setpoint = -720.0/2 # y size
-        self.pid_w.setpoint =a 0 # orientation
+        self.pid_w.setpoint = 0 # orientation
 
     def set_goal_vel(self, vx, vy, vz, vw):
         self.velocity.linear.x = vx
@@ -109,9 +85,9 @@ class VisCon():
         self.delay = time.time() - self.last_time
         self.is_losted = self.delay > 1
         if not self.is_losted:
-            self.velocity.linear.x = self.pid_x(self.detection.vector.z)
-            self.velocity.linear.y = self.pid_y(self.detection.vector.x)
-            self.velocity.linear.z = self.pid_z(-self.detection.vector.y) # PID z must have negative parameters
+            self.velocity.linear.x = self.pid_x(self.detection.area_ratio)
+            self.velocity.linear.y = self.pid_y(self.detection.center_x)
+            self.velocity.linear.z = self.pid_z(-self.detection.center_y) # PID z must have negative parameters
             self.velocity.angular.z = 0 # TODO implement self.pid_w(orientation)
         
             self.vel_pub.publish(self.velocity)

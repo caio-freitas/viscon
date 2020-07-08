@@ -1,5 +1,5 @@
 <launch>
     <node pkg="viscon" name="h_mission" type="run_h_mission.py" output="screen"/>
-    <node pkg="cv_detection" name="h_detector" type="h_det.py" output="screen"/>
+    <node pkg="cv_detection" name="h_node" type="h_node" output="screen"/>
     <node pkg="viscon" name="cv_control_h" type="cv_control.py" output="screen"/>
 </launch>
