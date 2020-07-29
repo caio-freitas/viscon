@@ -27,7 +27,7 @@ class MAV:
                 #"bebop_velocity_pub" : "/bebop/setpoint_velocity/cmd_vel"}
 
     def __init__(self, mav_name, mav_type="mavros"):
-        #rospy.init_node("MAV_" + mav_name)
+        #rospy.init_node("MAV_{}".format(mav_name))
         self.rate = rospy.Rate(60)
 
         self.drone_pose = PoseStamped()
@@ -224,6 +224,6 @@ class MAV:
             self.arm(False)
 
 if __name__ == '__main__':
-    mav = MAV("1") #MAV name
+    mav = MAV(1) #MAV name
     mav.takeoff(3)
     mav.RTL()
