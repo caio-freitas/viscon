@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import rospy
 from cv_detection.msg import H_info
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import TwistStamped
 from std_msgs.msg import Bool
 
 from dynamic_reconfigure.server import Server
@@ -33,7 +33,7 @@ class VisCon():
         # self.calibrate_pid = rospy.get_param('~calibrate_pid',False)
 
         # Publishers
-        self.vel_pub = rospy.Publisher(self.vel_topic, Twist, queue_size=1)
+        self.vel_pub = rospy.Publisher(self.vel_topic, TwistStamped, queue_size=1)
 
         # Subscribers
         self.detection_sub = rospy.Subscriber('/cv_detection/detection', H_info, self.detection_callback)
@@ -45,7 +45,7 @@ class VisCon():
 
         # Attributes
         self.delay = 0
-        self.velocity = Twist()
+        self.velocity = TwistStamped()
         self.scale_factor = 1
         self.is_losted = True
         self.last_time = time.time()
