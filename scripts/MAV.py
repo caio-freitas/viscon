@@ -13,7 +13,7 @@ from sensor_msgs.msg import BatteryState
 from mavros_msgs.msg import Mavlink
 
 
-TOL = 0.5
+TOL = 0.2
 MAX_TIME_DISARM = 15
 CONFIG = {"mavros_local_position_pub" : "/mavros/setpoint_position/local",
                 "mavros_velocity_pub" : "/mavros/setpoint_velocity/cmd_vel",
@@ -122,7 +122,7 @@ class MAV:
 
         t=0
         t += 150*part
-        while not rospy.is_shutdown() and self.drone_pose.pose.position.z <= height:
+        while not rospy.is_shutdown() and self.drone_pose.pose.position.z - height >= TOL:
             rospy.loginfo('Executing State TAKEOFF')
 
             if self.drone_state != "OFFBOARD":
