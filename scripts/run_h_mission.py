@@ -31,17 +31,16 @@ def run():
     """ INITIALIZE CV_CONTROL """
     for i in range (10):
         cv_control_publisher.publish(Bool(True))
-
-    """ INITIALIZE H DETECTION """
-    for i in range(10):
         h_detect_publisher.publish(Bool(True))
+        mav.rate.sleep()
+        
 
     # while not terminou or timout:
     #     rate.sleep()
 
     init_time = time.time()
     while not time.time() - init_time >= 10:
-        mav.set_position(0, 1, height)
+        #mav.set_vel(0, 0, 0)
         mav.rate.sleep()
 
     """ END H DETECTION """

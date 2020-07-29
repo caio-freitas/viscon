@@ -25,9 +25,9 @@ class VisCon():
         self.running_sub = rospy.Subscriber("/cv_detection/set_running_state", Bool, self.running_callback)
 
         # ROS Parameters
-        self.vel_topic = "/tello/cmd_vel" # Tello
+        #self.vel_topic = "/mavros/cmd_vel" # Tello
         # self.vel_topic = "/mavros/setpoint_velocity/cmd_vel"
-        #self.vel_topic = rospy.get_param("/vel_topic")
+        self.vel_topic = rospy.get_param("/vel_topic")
         #self.pose_topic = rospy.get_param("/pose_topic")
 
         # self.pid_config_file = rospy.get_param("~pid_config_file")
