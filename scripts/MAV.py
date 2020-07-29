@@ -22,9 +22,10 @@ CONFIG = {"mavros_local_position_pub" : "/mavros/setpoint_position/local",
                 "mavros_arm" :          "/mavros/cmd/arming",
                 "mavros_set_mode" :     "/mavros/set_mode",
                 "mavros_battery_sub" :  "/mavros/battery"}
+                #"bebop_velocity_pub" : "/bebop/setpoint_velocity/cmd_vel"}
 class MAV:
     
-                #"bebop_velocity_pub" : "/bebop/setpoint_velocity/cmd_vel"}
+               
 
     def __init__(self, mav_name, mav_type="mavros"):
         #rospy.init_node("MAV_{}".format(mav_name))

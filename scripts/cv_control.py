@@ -23,7 +23,6 @@ class VisCon():
         # State updater
         self.running_state = False
         self.running_sub = rospy.Subscriber("/cv_detection/set_running_state", Bool, self.running_callback)
-
         # ROS Parameters
         #self.vel_topic = "/mavros/cmd_vel" # Tello
         # self.vel_topic = "/mavros/setpoint_velocity/cmd_vel"
@@ -40,8 +39,6 @@ class VisCon():
         self.detection_sub = rospy.Subscriber('/cv_detection/detection', H_info, self.detection_callback)
                                                 #'/viscon/cv_control/set_running_state'
         self.last_time = time.time()
-        rospy.init_node('control')
-        self.rate = rospy.Rate(60)
 
         # Servers
         self.cfg_srv = Server(ControllerConfig, self.cfg_callback)
@@ -63,6 +60,7 @@ class VisCon():
         self.pid_z.output_limits = (-0.3, 0.3)  # output value will be between -0.8 and 0.8
     
     def running_callback(self, bool):
+        rospy.logwarn("CV Control activated")
         self.running_state = bool.data
 
 
