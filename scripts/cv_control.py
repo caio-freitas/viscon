@@ -72,10 +72,10 @@ class VisCon():
         self.pid_w.setpoint = 0 # orientation
 
     def set_goal_vel(self, vx, vy, vz, vw):
-        self.twist.velocity.linear.x = vx
-        self.twist.velocity.linear.y = vy
-        self.twist.velocity.linear.z = vz
-        self.twist.velocity.angular.z = vw # not volkswagen
+        self.velocity.twist.linear.x = vx
+        self.velocity.twist.linear.y = vy
+        self.velocity.twist.linear.z = vz
+        self.velocity.twist.angular.z = vw # not volkswagen
 
     def detection_callback(self, vector_data):
         self.detection = vector_data
@@ -83,20 +83,20 @@ class VisCon():
         self.delay = time.time() - self.last_time
         self.is_losted = self.delay > 1
         if not self.is_losted:
-            self.twist.velocity.linear.x = self.pid_x(self.detection.area_ratio)
-            self.twist.velocity.linear.y = self.pid_y(self.detection.center_x)
-            self.twist.velocity.linear.z = self.pid_z(-self.detection.center_y) # PID z must have negative parameters
-            self.twist.velocity.angular.z = 0 # TODO implement self.pid_w(orientation)
+            self.velocity.twist.linear.x = self.pid_x(self.detection.area_ratio)
+            self.velocity.twist.linear.y = self.pid_y(self.detection.center_x)
+            self.velocity.twist.linear.z = self.pid_z(-self.detection.center_y) # PID z must have negative parameters
+            self.velocity.twist.angular.z = 0 # TODO implement self.pid_w(orientation)
         
             self.vel_pub.publish(self.velocity)
 
         else:            # Assume velocity message will be treated
 
             rospy.loginfo("Timeout: {}".format(str(self.delay)))
-            self.twist.velocity.linear.x = 0
-            self.twist.velocity.linear.y = 0
-            self.twist.velocity.linear.z = 0
-            self.twist.velocity.angular.z = 0 # TODO implement self.pid_w(orientation)
+            self.velocity.twist.linear.x = 0
+            self.velocity.twist.linear.y = 0
+            self.velocity.twist.linear.z = 0
+            self.velocity.twist.angular.z = 0 # TODO implement self.pid_w(orientation)
         
             self.vel_pub.publish(self.velocity)
             # Assume velocity message will be treated
