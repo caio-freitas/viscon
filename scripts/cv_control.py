@@ -50,9 +50,9 @@ class VisCon():
         self.is_losted = True
         self.last_time = time.time()
         # PIDs
-        self.pid_x = PID(0.00001, 0, 0)         # size how close the drone is to the H
-        self.pid_y = PID(0.00081, 0.00001, 0)
-        self.pid_z = PID(-0.00081, -0.00001, 0) # Negative parameters (CV's -y -> Frame's +z)
+        self.pid_x = PID(0.001, 0.0001, 0)         # size how close the drone is to the H
+        self.pid_y = PID(0.081, 0.001, 0)
+        self.pid_z = PID(-0.081, -0.001, 0) # Negative parameters (CV's -y -> Frame's +z)
         self.pid_w = PID(0, 0, 0) # Orientation
 
         self.pid_x.output_limits = self.pid_y.output_limits = (-0.3, 0.3) # output value will be between -0.3 and 0.3
@@ -81,7 +81,7 @@ class VisCon():
         self.detection = vector_data
         
         self.delay = time.time() - self.last_time
-        self.is_losted = self.delay > 1
+        self.is_losted = self.delay > 5
         if not self.is_losted:
             self.velocity.twist.linear.x = self.pid_x(self.detection.area_ratio)
             self.velocity.twist.linear.y = self.pid_y(self.detection.center_x)
