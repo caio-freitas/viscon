@@ -67,8 +67,8 @@ class VisCon():
     
     def set_goal_pose(self, x, y, z, w):
         self.pid_x.setpoint = 0.01 # 1% of the image area
-        self.pid_y.setpoint = 960.0/2 #x
-        self.pid_z.setpoint = -720.0/2 # y size
+        self.pid_y.setpoint = 320.0/2 # x
+        self.pid_z.setpoint = -240.0/2 # y size
         self.pid_w.setpoint = 0 # orientation
 
     def set_goal_vel(self, vx, vy, vz, vw):
@@ -87,7 +87,7 @@ class VisCon():
             self.velocity.twist.linear.y = self.pid_y(self.detection.center_x)
             self.velocity.twist.linear.z = self.pid_z(-self.detection.center_y) # PID z must have negative parameters
             self.velocity.twist.angular.z = 0 # TODO implement self.pid_w(orientation)
-        
+            self.stamp = rospy.Time.now()
             self.vel_pub.publish(self.velocity)
 
         else:            # Assume velocity message will be treated

@@ -94,6 +94,7 @@ class MAV:
         self.goal_vel.twist.angular.x = roll
         self.goal_vel.twist.angular.y = pitch
         self.goal_vel.twist.angular.z = yaw
+        self.stamp = rospy.Time.now()
         self.velocity_pub.publish(self.goal_vel)
 
     def chegou(self):
