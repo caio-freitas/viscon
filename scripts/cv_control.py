@@ -50,14 +50,14 @@ class VisCon():
         self.is_losted = True
         self.last_time = time.time()
         # PIDs
-        self.pid_x = PID(0.001, 0.0001, 0)         # size how close the drone is to the H
-        self.pid_y = PID(0.081, 0.001, 0)
-        self.pid_z = PID(-0.081, -0.001, 0) # Negative parameters (CV's -y -> Frame's +z)
+        self.pid_x = PID(1, 0.01, 0.0001)         # size how close the drone is to the H
+        self.pid_y = PID(0.01, 0.001, 0.0001)
+        self.pid_z = PID(-0.01, -0.001, 0.0001) # Negative parameters (CV's -y -> Frame's +z)
         self.pid_w = PID(0, 0, 0) # Orientation
 
-        self.pid_x.output_limits = self.pid_y.output_limits = (-0.3, 0.3) # output value will be between -0.3 and 0.3
+        self.pid_x.output_limits = self.pid_y.output_limits = (-0.5, 0.5) # output value will be between -0.3 and 0.3
        
-        self.pid_z.output_limits = (-0.3, 0.3)  # output value will be between -0.8 and 0.8
+        self.pid_z.output_limits = (-0.5, 0.5)  # output value will be between -0.8 and 0.8
     
     def running_callback(self, bool):
         rospy.logwarn("CV Control activated")

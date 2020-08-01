@@ -13,10 +13,10 @@ def run():
     cv_control_publisher = rospy.Publisher("/cv_detection/set_running_state", Bool, queue_size=10)
     mav = MAV(1)
     height = 2
-    for i in range (10):
-        cv_control_publisher.publish(Bool(False))
-        h_detect_publisher.publish(Bool(False))
-        mav.rate.sleep()
+    # for i in range (10):
+    #     cv_control_publisher.publish(Bool(False))
+    #     h_detect_publisher.publish(Bool(False))
+    #     mav.rate.sleep()
 
 
     """ ARM AND TAKE OFF"""
@@ -43,11 +43,8 @@ def run():
     #     rate.sleep()
 
     init_time = time.time()
-    while not time.time() - init_time >= 40:
+    while not time.time() - init_time >= 20:
         #mav.set_vel(0, 0, 0)
-        if mav.drone_state != "OFFBOARD":
-            rospy.loginfo("SETTING OFFBOARD FLIGHT MODE")
-            mav.set_mode(custom_mode = "OFFBOARD")
         mav.rate.sleep()
 
     """ END H DETECTION """

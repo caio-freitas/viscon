@@ -46,7 +46,7 @@ class MAV:
         #self.mavlink_pub = rospy.Publisher('/mavlink/to', Mavlink, queue_size=1)
         ########## Subscribers ##################
         self.local_atual = rospy.Subscriber(CONFIG[mav_type + "_local_atual"], PoseStamped, self.local_callback)
-        self.state_sub = rospy.Subscriber(CONFIG[mav_type + "_set_mode"], State, self.state_callback) #'mavros/state' maybe?
+        self.state_sub = rospy.Subscriber("/mavros/state", State, self.state_callback) #'mavros/state' maybe?
         self.battery_sub = rospy.Subscriber(CONFIG[mav_type + "_battery_sub"], BatteryState, self.battery_callback)
         self.extended_state_sub = rospy.Subscriber("/mavros/extended_status", ExtendedState, self.extended_state_callback, queue_size=2)
         ############# Services ##################
@@ -74,6 +74,8 @@ class MAV:
 
     ###### Callback Functions ##########
     def state_callback(self, state_data):
+        print(state_data)
+        print("state callback")
         self.drone_state = state_data
 
     def battery_callback(self, bat_data):
@@ -156,7 +158,7 @@ class MAV:
         t += inicial_height
         while not rospy.is_shutdown() and self.drone_pose.pose.position.z <= height:
 
-            if self.drone_state != "OFFBOARD":
+            if self.drone_state.mode != "OFFBOARD":
                 rospy.loginfo("SETTING OFFBOARD FLIGHT MODE")
                 self.set_mode("OFFBOARD", 5) 
 
