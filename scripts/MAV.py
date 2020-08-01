@@ -22,16 +22,11 @@ CONFIG = {"mavros_local_position_pub" : "/mavros/setpoint_position/local",
                 "mavros_arm" :          "/mavros/cmd/arming",
                 "mavros_set_mode" :     "/mavros/set_mode",
                 "mavros_battery_sub" :  "/mavros/battery"}
-<<<<<<< HEAD
-
-=======
->>>>>>> 089ce7044f63b95e8ed750b37aa5ede669c24193
 class MAV:
     
                 #"bebop_velocity_pub" : "/bebop/setpoint_velocity/cmd_vel"}
 
     def __init__(self, mav_name, mav_type="mavros"):
-        rospy.init_node("MAV_" + mav_name)
         self.rate = rospy.Rate(60)
         self.desired_state = ""
 
@@ -52,11 +47,7 @@ class MAV:
         
         ############# Services ##################
         self.arm = rospy.ServiceProxy(CONFIG[mav_type + "_arm"], CommandBool)
-<<<<<<< HEAD
         self.set_mode_srv = rospy.ServiceProxy(CONFIG[mav_type + "_set_mode"], SetMode)
-=======
-        self.set_mode_srv= rospy.ServiceProxy('mavros/set_mode', SetMode)
->>>>>>> 089ce7044f63b95e8ed750b37aa5ede669c24193
 
         self.LAND_STATE = ExtendedState.LANDED_STATE_UNDEFINED # landing state
         '''
@@ -69,19 +60,10 @@ class MAV:
         try:
             rospy.wait_for_service('mavros/param/get', service_timeout)
             rospy.wait_for_service('mavros/cmd/arming', service_timeout)
-<<<<<<< HEAD
             rospy.wait_for_service('mavros/set_mode', service_timeout)
             rospy.loginfo("ROS services are up")
         except rospy.ROSException:
             rospy.logerr("failed to connect to services")
-=======
-            rospy.wait_for_service('mavros/mission/push', service_timeout)
-            rospy.wait_for_service('mavros/mission/clear', service_timeout)
-            rospy.wait_for_service('mavros/set_mode', service_timeout)
-            rospy.loginfo("ROS services are up")
-        except rospy.ROSException:
-            self.fail("failed to connect to services")
->>>>>>> 089ce7044f63b95e8ed750b37aa5ede669c24193
 
 
     ###### Callback Functions ##########
@@ -89,7 +71,7 @@ class MAV:
         rospy.loginfo("{}->{}".format(self.drone_state.mode, self.desired_state))
         self.drone_state = state_data
         if self.drone_state.mode != self.desired_state:
-            rospy.loginfo("Setting {} flight mode".format(desired_state))
+            #rospy.loginfo("Setting {} flight mode".format(self.desired_state))
             self.set_mode_srv(0, self.desired_state)
 
     def battery_callback(self, bat_data):
@@ -121,17 +103,10 @@ class MAV:
         self.goal_vel.twist.angular.z = yaw
         self.velocity_pub.publish(self.goal_vel)
 
-<<<<<<< HEAD
     def set_mode(self, mode, timeout):
         """mode: PX4 mode string, timeout(int): seconds"""
         rospy.loginfo("setting FCU mode: {0}".format(mode))
         self.desired_state = mode
-=======
-
-    def set_mode(self, mode, timeout): 
-        """mode: PX4 mode string, timeout(int): seconds"""
-        rospy.loginfo("setting FCU mode: {0}".format(mode))
->>>>>>> 089ce7044f63b95e8ed750b37aa5ede669c24193
         old_mode = self.drone_state.mode
         loop_freq = 1  # Hz
         loop_rate = rospy.Rate(loop_freq)
