@@ -145,13 +145,16 @@ class MAV:
             self.rate.sleep()
         self.set_mode("OFFBOARD", 5)
 
-        rospy.logwarn("ARMING DRONE")
-        fb = self.arm(True)
-        while not fb.success:
-            rospy.logwarn("ARMING DRONE {}".format(fb))
+        if not self.drone_state.armed:
+            rospy.logwarn("ARMING DRONE")
             fb = self.arm(True)
-            self.rate.sleep()
-        rospy.loginfo("DRONE ARMED")
+            while not fb.success:
+                rospy.logwarn("ARMING DRONE {}".format(fb))
+                fb = self.arm(True)
+                self.rate.sleep()
+                rospy.loginfo("DRONE ARMED")
+        else:
+            rospy.loginfo("DRONE ALREADY ARMED")
         self.rate.sleep()
 
         t=0
@@ -196,8 +199,9 @@ class MAV:
         self.rate.sleep()
 
         init_time = rospy.get_rostime().secs
-        #while not (self.drone_pose.pose.position.z < -0.1) and rospy.get_rostime().secs - init_time < (height/velocity)*1.3: #30% tolerance in time
-        while not self.LAND_STATE == ExtendedState.LANDED_STATE_ON_GROUND or rospy.get_rostime().secs - init_time < 100.0: #100 seconds
+        
+        #while self.LAND_STATE == ExtendedState.LANDED_STATE_IN_AIR or rospy.get_rostime().secs - init_time < 100.0: #100 seconds
+        while not (self.drone_pose.pose.position.z <= -0.1) or rospy.get_rostime().secs - init_time < (height/velocity)*1.3: #30% tolerance in time
             rospy.loginfo('Executing State RTL')
 
             rospy.loginfo('Height: ' + str(abs(self.drone_pose.pose.position.z)))
