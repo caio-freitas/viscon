@@ -15,39 +15,39 @@ import math
 
 TOL = 0.5
 MAX_TIME_DISARM = 15
-mavros_local_position_pub = rospy.get_param("/mavros_local_position_pub")
-mavros_velocity_pub= rospy.get_param("/mavros_velocity_pub")
-mavros_local_atual = rospy.get_param("/mavros_local_atual")
-mavros_state_sub = rospy.get_param("/mavros_state_sub")
-mavros_arm = rospy.get_param("/mavros_arm")
-mavros_set_mode = rospy.get_param("/mavros_set_mode")
-mavros_battery_sub = rospy.get_param("/mavros_battery_sub")
-#extended_state_sub = rospy.get_param("/extended_state_sub")
-
+CONFIG = {"mavros_local_position_pub" : "/mavros/setpoint_position/local",
+                "mavros_velocity_pub" : "/mavros/setpoint_velocity/cmd_vel",
+                "mavros_local_atual" :  "/mavros/local_position/pose",
+                "mavros_state_sub" :    "/mavros/state",
+                "mavros_arm" :          "/mavros/cmd/arming",
+                "mavros_set_mode" :     "/mavros/set_mode",
+                "mavros_battery_sub" :  "/mavros/battery"}
 class MAV:
-    #rospy.init_node("head")
+    
                 #"bebop_velocity_pub" : "/bebop/setpoint_velocity/cmd_vel"}
-    def __init__(self, mav_name):
+
+    def __init__(self, mav_name, mav_type="mavros"):
         self.rate = rospy.Rate(60)
         self.desired_state = ""
+
         self.drone_pose = PoseStamped()
         self.goal_pose = PoseStamped()
         self.goal_vel = TwistStamped()
         self.drone_state = State()
         self.battery = BatteryState()
-        ############### Publishers ##############
-        self.local_position_pub = rospy.Publisher(mavros_local_position_pub, PoseStamped, queue_size = 20)
-        self.velocity_pub = rospy.Publisher(mavros_velocity_pub,  TwistStamped, queue_size=5)
+        # ############## Publishers ##############
+        self.local_position_pub = rospy.Publisher(CONFIG[mav_type + "_local_position_pub"], PoseStamped, queue_size = 20)
+        self.velocity_pub = rospy.Publisher(CONFIG[mav_type + "_velocity_pub"],  TwistStamped, queue_size=5)
 
         ########## Subscribers ##################
-        self.local_atual = rospy.Subscriber(mavros_local_atual, PoseStamped, self.local_callback)
-        self.state_sub = rospy.Subscriber(mavros_state_sub, State, self.state_callback, queue_size=1) #'mavros/state' maybe?
-        self.battery_sub = rospy.Subscriber(mavros_battery_sub, BatteryState, self.battery_callback)
+        self.local_atual = rospy.Subscriber(CONFIG[mav_type + "_local_atual"], PoseStamped, self.local_callback)
+        self.state_sub = rospy.Subscriber(CONFIG[mav_type + "_state_sub"], State, self.state_callback, queue_size=1) #'mavros/state' maybe?
+        self.battery_sub = rospy.Subscriber(CONFIG[mav_type + "_battery_sub"], BatteryState, self.battery_callback)
         self.extended_state_sub = rospy.Subscriber("/mavros/extended_status", ExtendedState, self.extended_state_callback, queue_size=2)
-        #self.extended_state_sub = rospy.Subscriber(extended_state_sub, ExtendedState, self.extended_state_callback, queue_size=2)        
+        
         ############# Services ##################
-        self.arm = rospy.ServiceProxy(mavros_arm, CommandBool)
-        self.set_mode_srv = rospy.ServiceProxy(mavros_set_mode, SetMode)
+        self.arm = rospy.ServiceProxy(CONFIG[mav_type + "_arm"], CommandBool)
+        self.set_mode_srv = rospy.ServiceProxy(CONFIG[mav_type + "_set_mode"], SetMode)
 
         self.LAND_STATE = ExtendedState.LANDED_STATE_UNDEFINED # landing state
         '''
@@ -144,7 +144,7 @@ class MAV:
             self.set_position(self.drone_pose.pose.position.x, self.drone_pose.pose.position.y, 0)
             self.rate.sleep()
         self.set_mode("OFFBOARD", 5)
-        
+
         if not self.drone_state.armed:
             rospy.logwarn("ARMING DRONE")
             fb = self.arm(True)
@@ -175,7 +175,7 @@ class MAV:
         return "done"
 
     def RTL(self):
-        velocity = 0.3 
+        velocity = 0.5 ####COLOCAR 0.3 DE VOLTA 
         ds = velocity/60.0
 
         self.rate.sleep()
@@ -199,8 +199,9 @@ class MAV:
         self.rate.sleep()
 
         init_time = rospy.get_rostime().secs
-        #while not (self.drone_pose.pose.position.z < -0.1) and rospy.get_rostime().secs - init_time < (height/velocity)*1.3: #30% tolerance in time
-        while self.LAND_STATE == ExtendedState.LANDED_STATE_IN_AIR or rospy.get_rostime().secs - init_time < (height/velocity)*1.3:
+        
+        while self.LAND_STATE == ExtendedState.LANDED_STATE_IN_AIR or rospy.get_rostime().secs - init_time < (height/velocity)*1.3: #100 seconds
+        #while not (self.drone_pose.pose.position.z <= -0.1) or rospy.get_rostime().secs - init_time < (height/velocity)*1.3: #30% tolerance in time
             rospy.loginfo('Executing State RTL')
 
             rospy.loginfo('Height: ' + str(abs(self.drone_pose.pose.position.z)))
@@ -222,6 +223,7 @@ class MAV:
     def land(self):
         velocity = 0.3
         init_time = rospy.get_rostime().secs
+        #while not (self.drone_pose.pose.position.z < 0.4 and not rospy.is_shutdown()) or  self.LAND_STATE == ExtendedState.LANDED_STATE_ON_GROUND:
         while self.LAND_STATE == ExtendedState.LANDED_STATE_IN_AIR or rospy.get_rostime().secs - init_time < (height/velocity)*1.3:
             rospy.logwarn('Landing')
             rospy.loginfo('Height: ' + str(abs(self.drone_pose.pose.position.z)))
