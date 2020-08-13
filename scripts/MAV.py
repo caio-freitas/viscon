@@ -65,7 +65,7 @@ class MAV:
 
     ###### Callback Functions ##########
     def state_callback(self, state_data):
-        rospy.loginfo("{}->{}".format(self.drone_state.mode, self.desired_state))
+        #rospy.loginfo("{}->{}".format(self.drone_state.mode, self.desired_state))
         self.drone_state = state_data
         if self.drone_state.mode != self.desired_state:
             #rospy.loginfo("Setting {} flight mode".format(self.desired_state))

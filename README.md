@@ -49,3 +49,16 @@ We can also control our MAV based on it's position relative to an object detecte
 * Run `control` node with `rosrun viscon cv_control.py`
 
 To use dynamic_reconfigure, `rosrun rqt_gui rqt_gui -s reconfigure` along with the simple_control.py node
+
+### Procedure for MAVROS (using [simulation](https://github.com/SkyRats/simulation) package)
+* Run `simulate.sh` script
+    * **Check** if last line is `roslaunch simulation H_world.launch`
+
+    `rosrun simulation simulate.sh`
+* Run `roslaunch viscon cv_control.launch` - [depends on cv_detection](https://github.com/SkyRats/cv_detection), it runs
+    * cv_detection's `h_node`
+    * viscon's `run_h_mission.py`
+    * viscon's `cv_control.py`
+
+Result should look something like this
+![](./media/H.gif)
