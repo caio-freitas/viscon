@@ -37,9 +37,8 @@ class VisCon():
 
         # Subscribers
         self.detection_sub = rospy.Subscriber('/cv_detection/detection', H_info, self.detection_callback)
-                                                #'/viscon/cv_control/set_running_state'
+        
         self.last_time = time.time()
-
         # Servers
         self.cfg_srv = Server(ControllerConfig, self.cfg_callback)
 

@@ -22,14 +22,12 @@ CONFIG = {"mavros_local_position_pub" : "/mavros/setpoint_position/local",
                 "mavros_arm" :          "/mavros/cmd/arming",
                 "mavros_set_mode" :     "/mavros/set_mode",
                 "mavros_battery_sub" :  "/mavros/battery"}
-class MAV:
-    
-                #"bebop_velocity_pub" : "/bebop/setpoint_velocity/cmd_vel"}
 
+class MAV:
     def __init__(self, mav_name, mav_type="mavros"):
         self.rate = rospy.Rate(60)
         self.desired_state = ""
-
+        self.arm_service = rospy.get_param("/arm_service")
         self.drone_pose = PoseStamped()
         self.goal_pose = PoseStamped()
         self.goal_vel = TwistStamped()
@@ -46,7 +44,7 @@ class MAV:
         self.extended_state_sub = rospy.Subscriber("/mavros/extended_status", ExtendedState, self.extended_state_callback, queue_size=2)
         
         ############# Services ##################
-        self.arm = rospy.ServiceProxy(CONFIG[mav_type + "_arm"], CommandBool)
+        self.arm = rospy.ServiceProxy(arm_service, CommandBool)
         self.set_mode_srv = rospy.ServiceProxy(CONFIG[mav_type + "_set_mode"], SetMode)
 
         self.LAND_STATE = ExtendedState.LANDED_STATE_UNDEFINED # landing state
@@ -68,7 +66,7 @@ class MAV:
 
     ###### Callback Functions ##########
     def state_callback(self, state_data):
-        rospy.loginfo("{}->{}".format(self.drone_state.mode, self.desired_state))
+        #rospy.loginfo("{}->{}".format(self.drone_state.mode, self.desired_state))
         self.drone_state = state_data
         if self.drone_state.mode != self.desired_state:
             #rospy.loginfo("Setting {} flight mode".format(self.desired_state))

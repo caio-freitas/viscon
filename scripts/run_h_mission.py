@@ -13,12 +13,7 @@ def run():
     cv_control_publisher = rospy.Publisher("/cv_detection/set_running_state", Bool, queue_size=10)
     mav = MAV("1")
     height = 2
-    # for i in range (10):
-    #     cv_control_publisher.publish(Bool(False))
-    #     h_detect_publisher.publish(Bool(False))
-    #     mav.rate.sleep()
-
-
+    
     """ ARM AND TAKE OFF"""
     mav.takeoff(height)
     height = 2
