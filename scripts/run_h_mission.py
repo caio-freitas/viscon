@@ -26,7 +26,7 @@ def run():
     #     rate.sleep()
 
     init_time = rospy.get_rostime().secs
-    while rospy.get_rostime().secs - init_time <= 20:
+    while rospy.get_rostime().secs - init_time <= 5:
         #mav.set_vel(0, 0, 0)
         mav.rate.sleep()
 

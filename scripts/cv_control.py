@@ -84,8 +84,6 @@ class VisCon():
             self.velocity.twist.linear.y = self.pid_y(self.detection.center_x)
             self.velocity.twist.linear.z = self.pid_z(-self.detection.center_y) # PID z must have negative parameters
             self.velocity.twist.angular.z = 0 # TODO implement self.pid_w(orientation)
-            self.stamp = rospy.Time.now()
-            self.vel_pub.publish(self.velocity)
 
         else:            # Assume velocity message will be treated
 
@@ -95,7 +93,7 @@ class VisCon():
             self.velocity.twist.linear.z = 0
             self.velocity.twist.angular.z = 0 # TODO implement self.pid_w(orientation)
         
-            self.vel_pub.publish(self.velocity)
+        self.vel_pub.publish(self.velocity)
             # Assume velocity message will be treated
         self.last_time = time.time()
         rospy.loginfo(self.velocity) # debug

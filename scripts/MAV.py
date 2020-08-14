@@ -8,6 +8,7 @@ from geometry_msgs.msg import PoseStamped, TwistStamped
 from mavros_msgs.msg import State, ExtendedState
 from sensor_msgs.msg import BatteryState
 import math
+import time
 
 TOL = 0.5
 MAX_TIME_DISARM = 15
@@ -233,13 +234,14 @@ class MAV:
         init_time = rospy.get_rostime().secs
 
         #while not (self.drone_pose.pose.position.z < -0.1) and rospy.get_rostime().secs - init_time < (height/velocity)*1.3: #30% tolerance in time
+        
         while self.LAND_STATE == ExtendedState.LANDED_STATE_IN_AIR or rospy.get_rostime().secs - init_time < (height/velocity)*1.3:
-            
+            rospy.logwarn(self.LAND_STATE)
             rospy.loginfo('Executing State RTL')
             rospy.loginfo('Height: ' + str(abs(self.drone_pose.pose.position.z)))
 
             sec = rospy.get_rostime().secs 
-            time = sec - init_time
+            time = (height/velocity) - (sec - init_time)
             p = ((-2 * (velocity**3) * (time**3)) / height**2) + ((3*(time**2) * (velocity**2))/height)
             self.set_position(self.drone_pose.pose.position.x, self.drone_pose.pose.position.y, p)
 
