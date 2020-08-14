@@ -13,8 +13,6 @@ import time
 import numpy as np
 
 class VisCon():
-
-
     def __init__(self):
         # ROS setup
         rospy.init_node('control')
@@ -26,7 +24,7 @@ class VisCon():
         # ROS Parameters
         #self.vel_topic = "/mavros/cmd_vel" # Tello
         # self.vel_topic = "/mavros/setpoint_velocity/cmd_vel"
-        self.vel_topic = rospy.get_param("/vel_topic")
+        self.vel_topic = rospy.get_param("/mavros_velocity_pub")
         #self.pose_topic = rospy.get_param("/pose_topic")
 
         # self.pid_config_file = rospy.get_param("~pid_config_file")
