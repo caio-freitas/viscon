@@ -5,12 +5,13 @@ import mavros_msgs
 from mavros_msgs import srv
 from mavros_msgs.srv import SetMode, CommandBool
 from geometry_msgs.msg import PoseStamped, TwistStamped
-from mavros_msgs.msg import State, ExtendedState
-from sensor_msgs.msg import BatteryState
+from mavros_msgs.msg import State, ExtendedState, PositionTarget, GlobalPositionTarget
+from sensor_msgs.msg import BatteryState, NavSatFix
 import math
 import time
 
 TOL = 0.5
+TOL_GLOBAL = 0.00001
 MAX_TIME_DISARM = 15
 
 ### mavros_params.yaml ###
@@ -21,7 +22,10 @@ mavros_state_sub = rospy.get_param("/mavros_state_sub")
 mavros_arm = rospy.get_param("/mavros_arm")
 mavros_set_mode = rospy.get_param("/mavros_set_mode")
 mavros_battery_sub = rospy.get_param("/mavros_battery_sub")
-#extended_state_sub = rospy.get_param("/extended_state_sub")
+extended_state_sub = rospy.get_param("/extended_state_sub")
+mavros_pose_target_sub = rospy.get_param("/mavros_pose_target_sub")
+mavros_global_position_sub = rospy.get_param("/mavros_global_position_sub")
+mavros_set_global_pub = rospy.get_param("/mavros_set_global_pub")
 
 class MAV:
     #rospy.init_node("head")
@@ -33,25 +37,34 @@ class MAV:
         self.goal_vel = TwistStamped()
         self.drone_state = State()
         self.battery = BatteryState()
+        self.global_pose = NavSatFix()
+        self.gps_target = GlobalPositionTarget()
+        
         ############### Publishers ##############
         self.local_position_pub = rospy.Publisher(mavros_local_position_pub, PoseStamped, queue_size = 20)
         self.velocity_pub = rospy.Publisher(mavros_velocity_pub,  TwistStamped, queue_size=5)
-
+        self.target_pub = rospy.Publisher(mavros_pose_target_sub, PositionTarget, queue_size=5)
+        self.global_position_pub = rospy.Publisher(mavros_set_global_pub, GlobalPositionTarget, queue_size= 20)
+        
         ########## Subscribers ##################
         self.local_atual = rospy.Subscriber(mavros_local_atual, PoseStamped, self.local_callback)
         self.state_sub = rospy.Subscriber(mavros_state_sub, State, self.state_callback, queue_size=10) 
         self.battery_sub = rospy.Subscriber(mavros_battery_sub, BatteryState, self.battery_callback)
-        self.extended_state_sub = rospy.Subscriber("/mavros/extended_status", ExtendedState, self.extended_state_callback, queue_size=2)
-        #self.extended_state_sub = rospy.Subscriber(extended_state_sub, ExtendedState, self.extended_state_callback, queue_size=2)        
+        self.global_position_sub = rospy.Subscriber(mavros_global_position_sub, NavSatFix, self.global_callback)
+        self.extended_state_sub = rospy.Subscriber(extended_state_sub, ExtendedState, self.extended_state_callback, queue_size=2)        
+        
         ############# Services ##################
         self.arm = rospy.ServiceProxy(mavros_arm, CommandBool)
         self.set_mode_srv = rospy.ServiceProxy(mavros_set_mode, SetMode)
 
         self.LAND_STATE = ExtendedState.LANDED_STATE_UNDEFINED # landing state
         '''
-        0: Undefined
-        1: On ground
-        2: In air
+        LANDED_STATE_UNDEFINED = 0
+        LANDED_STATE_ON_GROUND = 1
+        LANDED_STATE_IN_AIR = 2
+        LANDED_STATE_TAKEOFF = 3
+        LANDED_STATE_LANDING = 4
+
         '''
         service_timeout = 30
         rospy.loginfo("waiting for ROS services")
@@ -82,6 +95,11 @@ class MAV:
 
     def extended_state_callback(self, es_data):
         self.LAND_STATE = es_data.landed_state
+
+    def global_callback(self, global_data):
+        self.global_pose.latitude = global_data.latitude
+        self.global_pose.longitude = global_data.longitude
+        self.global_pose.altitude = global_data.altitude
 
     ####### Set Position and Velocity ################
     def set_position(self, x, y, z):
@@ -126,28 +144,6 @@ class MAV:
             except rospy.ROSException as e:
                 rospy.logerr(e)
 
-   #def set_position_target(self, type_mask, x_position=0, y_position=0, z_position=0, x_velocity=0, y_velocity=0, z_velocity=0, x_aceleration=0, y_aceleration=0, z_aceleration=0, yaw=0, yaw_rate=0):
-        #self.pose_target.coordinate_frame = PositionTarget.FRAME_LOCAL_NED
-        #self.pose_target.type_mask = type_mask
-        #https://mavlink.io/en/messages/common.html#POSITION_TARGET_TYPEMASK
-        #4095 ignores every dimension (subtract the usefull ones from it)
-
-        #self.pose_target.position.x = x_position
-        #self.pose_target.position.y = y_position
-        #self.pose_target.position.z = z_position
-
-        #self.pose_target.velocity.x = x_velocity
-        #self.pose_target.velocity.y = y_velocity
-        #self.pose_target.velocity.z = z_velocity
-
-        #self.pose_target.acceleration_or_force.x = x_aceleration
-        #self.pose_target.acceleration_or_force.y = y_aceleration
-        #self.pose_target.acceleration_or_force.z = z_aceleration
-
-        #self.pose_target.yaw = yaw
-        #self.pose_target.yaw_rate = yaw_rate
-
-        #self.target_pub.publish(self.pose_target)
 
     def chegou(self):
         if (abs(self.goal_pose.pose.position.x - self.drone_pose.pose.position.x) < TOL) and (abs(self.goal_pose.pose.position.y - self.drone_pose.pose.position.y) < TOL) and (abs(self.goal_pose.pose.position.z - self.drone_pose.pose.position.z) < TOL):
@@ -219,13 +215,13 @@ class MAV:
         rospy.loginfo('Position: (' + str(self.drone_pose.pose.position.x) + ', ' + str(self.drone_pose.pose.position.y) + ', ' + str(self.drone_pose.pose.position.z) + ')')
         rospy.loginfo('Goal Position: (' + str(self.goal_pose.pose.position.x) + ', ' + str(self.goal_pose.pose.position.y) + ', ' + str(self.goal_pose.pose.position.z) + ')')
 
-
+        '''
         while not self.chegou():
             rospy.loginfo('Executing State RTL')
             rospy.loginfo("STARING HOME")
             self.set_position(0,0,height)
             self.rate.sleep()
-
+        '''
         t=0
         
         #self.set_position(0,0,height-ds)
@@ -234,14 +230,14 @@ class MAV:
         init_time = rospy.get_rostime().secs
 
         #while not (self.drone_pose.pose.position.z < -0.1) and rospy.get_rostime().secs - init_time < (height/velocity)*1.3: #30% tolerance in time
-        
-        while self.LAND_STATE == ExtendedState.LANDED_STATE_IN_AIR or rospy.get_rostime().secs - init_time < (height/velocity)*1.3:
+      
+        while not self.LAND_STATE == ExtendedState.LANDED_STATE_ON_GROUND or rospy.get_rostime().secs - init_time < (height/velocity)*1.3:
             rospy.logwarn(self.LAND_STATE)
             rospy.loginfo('Executing State RTL')
             rospy.loginfo('Height: ' + str(abs(self.drone_pose.pose.position.z)))
 
             sec = rospy.get_rostime().secs 
-            time = (height/velocity) - (sec - init_time)
+            time = init_time - sec 
             p = ((-2 * (velocity**3) * (time**3)) / height**2) + ((3*(time**2) * (velocity**2))/height)
             self.set_position(self.drone_pose.pose.position.x, self.drone_pose.pose.position.y, p)
 
@@ -286,7 +282,47 @@ class MAV:
             self.land()
             self.arm(False)
 
+
+    def set_global_target(self, lat, lon):
+        # http://wiki.ros.org/mavros#mavros.2FPlugins.setpoint_position
+        # http://docs.ros.org/kinetic/api/mavros_msgs/html/msg/GlobalPositionTarget.html
+        while abs(lat - self.global_pose.latitude) >= TOL_GLOBAL and abs(lon - self.global_pose.longitude) >= TOL_GLOBAL:
+
+            rospy.logwarn("ESTOU NO WHILE")
+            self.gps_target.latitude = lat
+            self.gps_target.longitude = lon
+            self.gps_target.altitude = self.drone_pose.pose.position.z
+            self.global_position_pub.publish(self.gps_target)
+            self.rate.sleep()
+            
+    def lower_altitude(self, altitude):
+        velocity = 1 # velocidade media
+        part = velocity/60.0
+        #inicial_height = (0.8 * 60 * part) / velocity
+
+        p = self.drone_pose.pose.position.z
+        init_time = rospy.get_rostime().secs
+
+        while abs(self.drone_pose.pose.position.z - altitude) >= TOL and not rospy.is_shutdown():
+            sec = rospy.get_rostime().secs 
+            time = init_time - sec 
+            
+            if p > altitude:
+                p = ((-2 * (velocity**3) * (time**3)) / altitude**2) + ((3*(time**2) * (velocity**2))/altitude)
+                self.set_position(self.drone_pose.pose.position.x, self.drone_pose.pose.position.y, p)
+                
+            else:
+                self.set_position(self.drone_pose.pose.position.x, self.drone_pose.pose.position.y, altitude)
+
+            rospy.loginfo('Position: (' + str(self.drone_pose.pose.position.x) + ', ' + str(self.drone_pose.pose.position.y) + ', '+ str(self.drone_pose.pose.position.z) + ')')
+
+        self.rate.sleep()
+        self.set_position(self.drone_pose.pose.position.x, self.drone_pose.pose.position.y, altitude)
+
+        return "done"   
+
 if __name__ == '__main__':
     mav = MAV("jorge")
     mav.takeoff(3)
     mav.RTL()
+
