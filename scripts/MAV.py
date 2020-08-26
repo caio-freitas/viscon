@@ -215,13 +215,13 @@ class MAV:
         rospy.loginfo('Position: (' + str(self.drone_pose.pose.position.x) + ', ' + str(self.drone_pose.pose.position.y) + ', ' + str(self.drone_pose.pose.position.z) + ')')
         rospy.loginfo('Goal Position: (' + str(self.goal_pose.pose.position.x) + ', ' + str(self.goal_pose.pose.position.y) + ', ' + str(self.goal_pose.pose.position.z) + ')')
 
-        '''
+    
         while not self.chegou():
-            rospy.loginfo('Executing State RTL')
+            rospy.loginfo('Executing MAV State RTL')
             rospy.loginfo("STARING HOME")
             self.set_position(0,0,height)
             self.rate.sleep()
-        '''
+    
         t=0
         
         #self.set_position(0,0,height-ds)
@@ -258,8 +258,9 @@ class MAV:
     def land(self):
         velocity = 0.7
         init_time = rospy.get_rostime().secs
-        p = ((-2 * (velocity**3) * (time**3)) / height**2) + ((3*(time**2) * (velocity**2))/height)
-        self.set_position(self.drone_pose.pose.position.x, self.drone_pose.pose.position.y,p)
+        height = self.drone_pose.pose.position.z
+        #p = ((-2 * (velocity**3) * (time**3)) / height**2) + ((3*(time**2) * (velocity**2))/height)
+        self.set_position(self.drone_pose.pose.position.x, self.drone_pose.pose.position.y,0)
         self.rate.sleep()
         while self.LAND_STATE == ExtendedState.LANDED_STATE_IN_AIR or rospy.get_rostime().secs - init_time < (height/velocity)*1.3:
             rospy.logwarn('Landing')
@@ -273,9 +274,9 @@ class MAV:
 
     def _disarm(self):
         rospy.logwarn("DISARM MAV")
-        if drone_pose.pose.position.z < TOL:
+        if self.drone_pose.pose.position.z < TOL:
             for i in range(3):
-                rospy.loginfo('Drone height' + str(drone_pose.pose.position.z))
+                rospy.loginfo('Drone height' + str(self.drone_pose.pose.position.z))
                 self.arm(False)
         else:
             rospy.logwarn("Altitude too high for disarming!")
