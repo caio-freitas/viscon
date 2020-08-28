@@ -2,6 +2,10 @@
 import rospy
 from MAV import MAV
 
+#MASK_POSITION = 0b00000000011, // x, y, z, vyaw
+#0b110111111000
+MASK_POSITION = 0b0000111111111100
+
 def run():
 
     rospy.init_node("head")
@@ -9,25 +13,24 @@ def run():
 
     lat_init = mav.global_pose.latitude
     lon_init = mav.global_pose.longitude
-    # ANTES TAVA + 0.0005
     lat = 47.40
     lon = 8.55
-
     height = 5
+    altitude = 1
+
     mav.takeoff(height)
     mav.rate.sleep()
-    
-    mav.set_global_target(lat, lon)
+                                
+    mav.gps_target(type_mask=MASK_POSITION, lat=lat, lon=lon)
 
-    altitude = 1
-    mav.lower_altitude(altitude)
+    mav.set_altitude(altitude)
     mav.rate.sleep()
     rospy.logwarn('CHEGUEI')
     
-    mav.takeoff(height)
+    mav.set_altitude(height)
     mav.rate.sleep()
 
-    mav.set_global_target(lat_init, lon_init)
+    mav.gps_target(MASK_POSITION, lat_init, lon_init)
     mav.rate.sleep()
 
     mav.RTL()
