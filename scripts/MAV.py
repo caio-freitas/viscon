@@ -323,9 +323,9 @@ class MAV:
         while abs(lat - self.global_pose.latitude) >= TOL_GLOBAL and abs(lon - self.global_pose.longitude) >= TOL_GLOBAL:
 
             rospy.logwarn("ESTOU NO WHILE")
-            self.gps_target.latitude = lat
-            self.gps_target.longitude = lon
-            self.gps_target.altitude = self.drone_pose.pose.position.z
+            self.gps_target.pose.position.latitude = lat
+            self.gps_target.pose.position.longitude = lon
+            self.gps_target.pose.position.altitude = self.drone_pose.pose.position.z
             self.global_position_pub.publish(self.gps_target)
             self.rate.sleep()
             
