@@ -4,7 +4,8 @@ import mavros_msgs
 from mavros_msgs import srv
 from mavros_msgs.srv import SetMode, CommandBool
 from geometry_msgs.msg import PoseStamped, TwistStamped
-from mavros_msgs.msg import State, ExtendedState, PositionTarget, GlobalPositionTarget
+from mavros_msgs.msg import State, ExtendedState, PositionTarget
+from geographic_msgs.msg import GeoPoseStamped
 from sensor_msgs.msg import BatteryState, NavSatFix
 import math
 import time
@@ -38,13 +39,13 @@ class MAV:
         self.drone_state = State()
         self.battery = BatteryState()
         self.global_pose = NavSatFix()
-        self.gps_target = GlobalPositionTarget()
+        self.gps_target = GeoPoseStamped()
         
         ############### Publishers ##############
         self.local_position_pub = rospy.Publisher(mavros_local_position_pub, PoseStamped, queue_size = 20)
         self.velocity_pub = rospy.Publisher(mavros_velocity_pub,  TwistStamped, queue_size=5)
         self.target_pub = rospy.Publisher(mavros_pose_target_sub, PositionTarget, queue_size=5)
-        self.global_position_pub = rospy.Publisher(mavros_set_global_pub, GlobalPositionTarget, queue_size= 20)
+        self.global_position_pub = rospy.Publisher(mavros_set_global_pub, GeoPoseStamped, queue_size= 20)
         
         ########## Subscribers ##################
         self.local_atual = rospy.Subscriber(mavros_local_atual, PoseStamped, self.local_callback)
@@ -291,28 +292,33 @@ class MAV:
     
     def gps_target(self, type_mask, lat=0, lon=0, altitude=0, x_velocity=0, y_velocity=0, z_velocity=0, x_aceleration=0, y_aceleration=0, z_aceleration=0, yaw=0, yaw_rate=0):
         # http://wiki.ros.org/mavros#mavros.2FPlugins.setpoint_position
-        # http://docs.ros.org/kinetic/api/mavros_msgs/html/msg/GlobalPositionTarget.html
-        self.gps_target.coordinate_frame = GlobalPositionTarget.FRAME_GLOBAL_INT
-        self.gps_target.type_mask = type_mask
+        # http://docs.ros.org/kinetic/api/mavros_msgs/html/msg/GeoPoseStamped.html
+        self.gps_target.header.frame_id = GeoPoseStamped.FRAME_GLOBAL_INT
+        #self.gps_target.type_mask = type_mask ########### nao sei oq isso faz - Freitas, Caio
 
-        self.gps_target.latitude = lat
-        self.gps_target.longitude = lon
-        self.gps_target.altitude = altitude
+        self.gps_target.pose.position.latitude = lat
+        self.gps_target.pose.position.longitude = lon
+        self.gps_target.pose.position.altitude = altitude
 
-        self.gps_target.velocity.x = x_velocity
-        self.gps_target.velocity.y = y_velocity
-        self.gps_target.velocity.z = z_velocity 
+
+        ######### nao precisa de velocidade e aceleracao
+        # self.gps_target.velocity.x = x_velocity
+        # self.gps_target.velocity.y = y_velocity
+        # self.gps_target.velocity.z = z_velocity 
         
-        self.gps_target.acceleration_or_force.x = x_aceleration
-        self.gps_target.acceleration_or_force.y = y_aceleration
-        self.gps_target.acceleration_or_force.z = z_aceleration
+        # self.gps_target.acceleration_or_force.x = x_aceleration
+        # self.gps_target.acceleration_or_force.y = y_aceleration
+        # self.gps_target.acceleration_or_force.z = z_aceleration
+        #self.gps_target.yaw_rate = yaw_rate
 
-        self.gps_target.yaw = yaw
-        self.gps_target.yaw_rate = yaw_rate
+        ## Orientation eh um quaternion
+        self.gps_target.orientation.x = self.gps_target.orientation.y = 0
+        self.gps_target.orientation.z = 1
+        self.gps_target.orientation.w = yaw
+
         self.global_position_pub.publish(self.gps_target)
         self.rate.sleep()
 
-        self.global_position_pub.publish(self.gps_target)
         
         while abs(lat - self.global_pose.latitude) >= TOL_GLOBAL and abs(lon - self.global_pose.longitude) >= TOL_GLOBAL:
 
