@@ -98,9 +98,11 @@ class MAV:
         self.LAND_STATE = es_data.landed_state
 
     def global_callback(self, global_data):
-        self.global_pose.latitude = global_data.latitude
-        self.global_pose.longitude = global_data.longitude
-        self.global_pose.altitude = global_data.altitude
+        #rospy.logerr(global_data)
+        self.global_pose = global_data
+        # self.global_pose.latitude = global_data.latitude
+        # self.global_pose.longitude = global_data.longitude
+        # self.global_pose.altitude = global_data.altitude
 
     ####### Set Position and Velocity ################
     def set_position(self, x, y, z):
@@ -173,7 +175,6 @@ class MAV:
         else:
             rospy.loginfo("DRONE ALREADY ARMED")
         self.rate.sleep()
-
         #""" Controlling trajectory with velocity """
         # v =  ((-6*(velocity**3)*((time)**2)) / (height**2)) + ((6*(velocity**2)*(time))/(height))
         #self.set_vel(0, 0, v)       
@@ -181,10 +182,11 @@ class MAV:
         #t += inicial_height
 
         p = self.drone_pose.pose.position.z
-        init_time = rospy.get_rostime().secs
+        #init_time = rospy.get_rostime().secs
+        time=0
         while abs(self.drone_pose.pose.position.z - height) >= TOL and not rospy.is_shutdown():
-            sec = rospy.get_rostime().secs 
-            time = sec - init_time
+            #sec = rospy.get_rostime().secs 
+            time += 1/60.0#sec - init_time
             rospy.logwarn('TAKING OFF AT ' + str(velocity) + ' m/s')   
             
             if p < height:
@@ -209,7 +211,6 @@ class MAV:
 
         self.rate.sleep()
         height = self.drone_pose.pose.position.z
-        rospy.loginfo('Position: (' + str(self.drone_pose.pose.position.x) + ', ' + str(self.drone_pose.pose.position.y) + ', ' + str(self.drone_pose.pose.position.z) + ')')
 
         self.set_position(0,0,height)
         self.rate.sleep()
@@ -232,12 +233,13 @@ class MAV:
 
         #while not (self.drone_pose.pose.position.z < -0.1) and rospy.get_rostime().secs - init_time < (height/velocity)*1.3: #30% tolerance in time
         inicial_p = height
+        time=0
         while not self.LAND_STATE == ExtendedState.LANDED_STATE_ON_GROUND or rospy.get_rostime().secs - init_time < (height/velocity)*1.3:
             rospy.logwarn(self.LAND_STATE)
             rospy.loginfo('Executing State RTL')
             rospy.loginfo('Height: ' + str(abs(self.drone_pose.pose.position.z)))
             sec = rospy.get_rostime().secs 
-            time = sec - init_time            
+            time += 1/60.0#sec - init_time          
             p = -0.5 + height - (((-2 * (velocity**3) * (time**3)) / height**2) + ((3*(time**2) * (velocity**2))/height))
             # the subtraction of -0.5 is for simulation motives
             if inicial_p > p:
@@ -290,10 +292,10 @@ class MAV:
             self.arm(False)
 
     
-    def gps_target(self, type_mask, lat=0, lon=0, altitude=0, x_velocity=0, y_velocity=0, z_velocity=0, x_aceleration=0, y_aceleration=0, z_aceleration=0, yaw=0, yaw_rate=0):
+    def go_gps_target(self, type_mask, lat=0, lon=0, altitude=0, x_velocity=0, y_velocity=0, z_velocity=0, x_aceleration=0, y_aceleration=0, z_aceleration=0, yaw=0, yaw_rate=0):
         # http://wiki.ros.org/mavros#mavros.2FPlugins.setpoint_position
         # http://docs.ros.org/kinetic/api/mavros_msgs/html/msg/GeoPoseStamped.html
-        self.gps_target.header.frame_id = GeoPoseStamped.FRAME_GLOBAL_INT
+        #self.gps_target.header.frame_id = GeoPoseStamped.FRAME_GLOBAL_INT
         #self.gps_target.type_mask = type_mask ########### nao sei oq isso faz - Freitas, Caio
 
         self.gps_target.pose.position.latitude = lat
@@ -312,9 +314,9 @@ class MAV:
         #self.gps_target.yaw_rate = yaw_rate
 
         ## Orientation eh um quaternion
-        self.gps_target.orientation.x = self.gps_target.orientation.y = 0
-        self.gps_target.orientation.z = 1
-        self.gps_target.orientation.w = yaw
+        self.gps_target.pose.orientation.x = self.gps_target.pose.orientation.y = 0
+        self.gps_target.pose.orientation.z = 1
+        self.gps_target.pose.orientation.w = yaw
 
         self.global_position_pub.publish(self.gps_target)
         self.rate.sleep()

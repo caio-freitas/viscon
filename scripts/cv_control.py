@@ -47,9 +47,9 @@ class VisCon():
         self.is_losted = True
         self.last_time = time.time()
         # PIDs
-        self.pid_x = PID(1, 0.01, 0.0001)         # size how close the drone is to the H
-        self.pid_y = PID(0.01, 0.001, 0.0001)
-        self.pid_z = PID(-0.01, -0.001, 0.0001) # Negative parameters (CV's -y -> Frame's +z)
+        self.pid_x = PID(-0.01, -0.008, -0.0001)         # size how close the drone is to the H
+        self.pid_y = PID(0.01, 0.008, 0.0001)
+        self.pid_z = PID(-0.1, -0.001, 0.0001) # Negative parameters (CV's -y -> Frame's +z)
         self.pid_w = PID(0, 0, 0) # Orientation
 
         self.pid_x.output_limits = self.pid_y.output_limits = (-0.5, 0.5) # output value will be between -0.3 and 0.3
@@ -63,9 +63,9 @@ class VisCon():
 
     
     def set_goal_pose(self, x, y, z, w):
-        self.pid_x.setpoint = 0.01 # 1% of the image area
+        self.pid_x.setpoint = -240.0/2 # y size
         self.pid_y.setpoint = 320.0/2 # x
-        self.pid_z.setpoint = -240.0/2 # y size
+        self.pid_z.setpoint = 0.01 # 1% of the image area
         self.pid_w.setpoint = 0 # orientation
 
     def set_goal_vel(self, vx, vy, vz, vw):
@@ -76,25 +76,6 @@ class VisCon():
 
     def detection_callback(self, vector_data):
         self.detection = vector_data
-        
-        self.delay = time.time() - self.last_time
-        self.is_losted = self.delay > 5
-        if not self.is_losted:
-            self.velocity.twist.linear.x = self.pid_x(self.detection.area_ratio)
-            self.velocity.twist.linear.y = self.pid_y(self.detection.center_x)
-            self.velocity.twist.linear.z = self.pid_z(-self.detection.center_y) # PID z must have negative parameters
-            self.velocity.twist.angular.z = 0 # TODO implement self.pid_w(orientation)
-
-        else:            # Assume velocity message will be treated
-
-            rospy.loginfo("Timeout: {}".format(str(self.delay)))
-            self.velocity.twist.linear.x = 0
-            self.velocity.twist.linear.y = 0
-            self.velocity.twist.linear.z = 0
-            self.velocity.twist.angular.z = 0 # TODO implement self.pid_w(orientation)
-        
-        self.vel_pub.publish(self.velocity)
-            # Assume velocity message will be treated
         self.last_time = time.time()
         rospy.loginfo(self.velocity) # debug
 
@@ -123,12 +104,28 @@ class VisCon():
     def run(self):
         self.set_goal_pose(0, 0, 0, 0)
         while not rospy.is_shutdown():
+            self.delay = time.time() - self.last_time
             if self.running_state:
-                t = 0
-                while self.is_losted:
-                    self.set_goal_vel(0, 0, 0, 0)
-                    self.vel_pub.publish(self.velocity)
-                self.rate.sleep()
+                self.delay = time.time() - self.last_time
+                self.is_losted = self.delay > 5
+                if not self.is_losted:
+                    self.velocity.twist.linear.x = self.pid_x(-self.detection.center_y)
+                    self.velocity.twist.linear.y = self.pid_y(self.detection.center_x)
+                    self.velocity.twist.linear.z = self.pid_z(-self.detection.area_ratio) # PID z must have negative parameters
+                    self.velocity.twist.angular.z = 0       # TODO implement self.pid_w(orientation)
+            
+                else:                                       # Assume velocity message will be treated
+
+                    rospy.loginfo("Timeout: {}".format(str(self.delay)))
+                    self.velocity.twist.linear.x = 0
+                    self.velocity.twist.linear.y = 0
+                    self.velocity.twist.linear.z = 0
+                    self.velocity.twist.angular.z = 0 # TODO implement self.pid_w(orientation)
+                
+                self.vel_pub.publish(self.velocity)
+                    # Assume velocity message will be treated
+                
+            self.rate.sleep()
 
 if __name__ == "__main__":
     c = VisCon()

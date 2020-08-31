@@ -11,17 +11,27 @@ def run():
     rospy.init_node("head")
     mav = MAV("1")
 
-    lat_init = mav.global_pose.latitude
-    lon_init = mav.global_pose.longitude
-    lat = 47.40
-    lon = 8.55
+
+    # while mav.global_pose.latitude < 0.1:
+    #     mav.rate.sleep()
+
+
     height = 5
     altitude = 1
 
     mav.takeoff(height)
     mav.rate.sleep()
+    for i in range(20):
+        mav.rate.sleep()
+        
+    lat_init = mav.global_pose.latitude
+    lon_init = mav.global_pose.longitude
+    lat = lat_init + 0.00002
+    lon = lon_init + 0.00008
+
+    rospy.logerr("{},{}".format(lat, lon))
                                 
-    mav.gps_target(type_mask=MASK_POSITION, lat=lat, lon=lon)
+    mav.go_gps_target(type_mask=MASK_POSITION, lat=lat, lon=lon)
 
     mav.set_altitude(altitude)
     mav.rate.sleep()
@@ -30,7 +40,7 @@ def run():
     mav.set_altitude(height)
     mav.rate.sleep()
 
-    mav.gps_target(MASK_POSITION, lat_init, lon_init)
+    mav.go_gps_target(MASK_POSITION, lat_init, lon_init)
     mav.rate.sleep()
 
     mav.RTL()

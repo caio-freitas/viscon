@@ -10,7 +10,11 @@ def run():
     cv_control_publisher = rospy.Publisher("/cv_detection/set_running_state", Bool, queue_size=10)
     mav = MAV("1")
     height = 2
-    
+    for i in range(10):
+        rospy.logwarn("Deactivating CV Control")
+        cv_control_publisher.publish(Bool(False))
+        mav.rate.sleep()
+
     """ ARM AND TAKE OFF"""
     mav.takeoff(height)
     height = 2
@@ -26,12 +30,15 @@ def run():
     #     rate.sleep()
 
     init_time = rospy.get_rostime().secs
-    while rospy.get_rostime().secs - init_time <= 5:
+    while rospy.get_rostime().secs - init_time <= 20:
         #mav.set_vel(0, 0, 0)
         mav.rate.sleep()
 
     """ END CV CONTROL """
-    cv_control_publisher.publish(Bool(False))
+    for i in range(10):
+        rospy.logwarn("Deactivating CV Control")
+        cv_control_publisher.publish(Bool(False))
+        mav.rate.sleep()
 
     """ LAND AND DISARM """
     mav.RTL()
