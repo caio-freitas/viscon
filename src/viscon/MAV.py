@@ -29,7 +29,6 @@ mavros_global_position_sub = rospy.get_param("/mavros_global_position_sub")
 mavros_set_global_pub = rospy.get_param("/mavros_set_global_pub")
 
 class MAV:
-    #rospy.init_node("head")
     def __init__(self, mav_name):
         self.rate = rospy.Rate(60)
         self.desired_state = ""

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import rospy
-from MAV import MAV
+from viscon.MAV import MAV
 from std_msgs.msg import Bool
 from geometry_msgs.msg import Vector3Stamped
 
