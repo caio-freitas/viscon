@@ -260,7 +260,7 @@ class MAV:
             self.land()
             self.arm(False)
 
-    def go_gps_target(self, type_mask, lat=0, lon=0, altitude=0, x_velocity=0, y_velocity=0, z_velocity=0, x_aceleration=0, y_aceleration=0, z_aceleration=0, yaw=0, yaw_rate=0):
+    def go_gps_target(self, lat=0, lon=0, altitude=0, x_velocity=0, y_velocity=0, z_velocity=0, x_aceleration=0, y_aceleration=0, z_aceleration=0, yaw=0, yaw_rate=0):
         self.gps_target.pose.position.latitude = lat
         self.gps_target.pose.position.longitude = lon
         self.gps_target.pose.position.altitude = altitude
@@ -285,15 +285,15 @@ class MAV:
 
         while abs(lat - self.global_pose.latitude) >= TOL_GLOBAL and abs(lon - self.global_pose.longitude) >= TOL_GLOBAL:
             if actual_dist <= K*inicial_distance:
-                v = K - (K/actual_distance)*actual_distance                                 # v vai de 0 ate K
+                v = K - (K/actual_distance)                                # v vai de 0 ate K
                 self.gps_target.pose.position.latitude = self.global_pose.latitude + (v*(lat - self.global_pose.latitude))
                 
             inicial = LatLon(Latitude(self.global_pose.latitude), Longitude(self.global_pose.longitude)) 
             actual_dist = inicial.distance(final)
-            
-            self.gps_target.pose.position.latitude = self.global_pose.latitude + ((K)*(lat - self.global_pose.latitude))
-            self.gps_target.pose.position.longitude = self.global_pose.longitude + ((K)*(lon - self.global_pose.longitude))
-            self.gps_target.pose.position.altitude = self.drone_pose.pose.position.z
+            else:
+                self.gps_target.pose.position.latitude = self.global_pose.latitude + ((K)*(lat - self.global_pose.latitude))
+                self.gps_target.pose.position.longitude = self.global_pose.longitude + ((K)*(lon - self.global_pose.longitude))
+                self.gps_target.pose.position.altitude = self.drone_pose.pose.position.z
             self.global_position_pub.publish(self.gps_target)
             self.loop_rate.sleep()
 
