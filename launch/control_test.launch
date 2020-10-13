@@ -1,5 +1,5 @@
 <launch>
     <rosparam command="load" file="$(find viscon)/config/mavros_params.yaml"/>
     <param name="/vel_topic" value="/mavros/setpoint_velocity/cmd_vel"/>
-    <node pkg="cv_cetection" name="control_test" type="control_test.py" output="screen"/>
+    <node pkg="viscon" name="control_test" type="control_test.py" output="screen"/>
 </launch>
