@@ -2,20 +2,12 @@
 import rospy
 from MAV import MAV
 
-#MASK_POSITION = 0b00000000011, // x, y, z, vyaw
-#0b110111111000
-MASK_POSITION = 0b0000111111111100
 
 def run():
 
     rospy.init_node("head")
     mav = MAV("1")
-
-
-    # while mav.global_pose.latitude < 0.1:
-    #     mav.rate.sleep()
-
-
+    
     height = 5
     altitude = 1
 
@@ -31,7 +23,7 @@ def run():
 
     rospy.logerr("{},{}".format(lat, lon))
                                 
-    mav.go_gps_target(type_mask=MASK_POSITION, lat=lat, lon=lon)
+    mav.go_gps_target(lat=lat, lon=lon)
 
     mav.set_altitude(altitude)
     mav.rate.sleep()
