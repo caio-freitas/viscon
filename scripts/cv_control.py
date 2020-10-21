@@ -130,16 +130,16 @@ class VisCon():
 
     def run(self):
         self.set_goal_pose(0, 0, 0, 0)
-        flag = 0
-        flag2 = 0
+        last_x = self.drone_pose.pose.position.x
+        last_y = self.drone_pose.pose.position.y
+        last_z = self.drone_pose.pose.position.z
         while not rospy.is_shutdown():
             self.pose
             self.delay = time.time() - self.last_time
             if self.running_state:
                 self.delay = time.time() - self.last_time
-                self.is_losted = self.delay > 4
+                self.is_losted = self.delay > 5
                 if not self.is_losted:
-                    flag = 1
                     if self.detection.area_ratio < 0.1:
                         r = 0
                         teta = 0
@@ -158,7 +158,7 @@ class VisCon():
 
                     self.vel_pub.publish(self.velocity)
 
-                elif flag == 1:                                       # Assume velocity message will be treated
+                else:                                       # Assume velocity message will be treated
                     #rospy.loginfo("Timeout: {}".format(str(self.delay))
                     if (last_z >= 0.8):
                         ### Fazer espiral grande ###
