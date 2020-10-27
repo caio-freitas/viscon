@@ -3,11 +3,16 @@ import rospy
 from MAV import MAV
 from std_msgs.msg import Bool
 from geometry_msgs.msg import Vector3Stamped
+running_state = False
+def running_callback(bool):
+    global running_state
+    running_state = bool.data
 
 def run():
-
+    global running_state
     rospy.init_node("head")
     cv_control_publisher = rospy.Publisher("/cv_detection/set_running_state", Bool, queue_size=10)
+    running_sub = rospy.Subscriber("/cv_detection/set_running_state", Bool, running_callback)
     mav = MAV("1")
     height = 2
     for i in range(10):
@@ -26,22 +31,27 @@ def run():
         cv_control_publisher.publish(Bool(True))
         mav.rate.sleep()
 
-    # while not terminou or timout:
-    #     rate.sleep()
 
     init_time = rospy.get_rostime().secs
-    while rospy.get_rostime().secs - init_time <= 20:
+    while running_state == 1 and rospy.get_rostime().secs - init_time <= 60:
+        running_sub
+        #rospy.logwarn("Precision Landing...")
         #mav.set_vel(0, 0, 0)
         mav.rate.sleep()
 
     """ END CV CONTROL """
-    for i in range(10):
+    '''for i in range(10):
         rospy.logwarn("Deactivating CV Control")
         cv_control_publisher.publish(Bool(False))
-        mav.rate.sleep()
+        mav.rate.sleep()'''
 
     """ LAND AND DISARM """
-    mav.RTL()
+    if(running_state == 0):
+        rospy.logwarn("Landing Drone")
+        mav.land()
+    else:
+        mav.RTL()
+        rospy.logwarn("RLT")
 
 if __name__ == "__main__":
     run()
