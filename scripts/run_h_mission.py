@@ -33,7 +33,7 @@ def run():
 
 
     init_time = rospy.get_rostime().secs
-    while running_state == 1 and rospy.get_rostime().secs - init_time <= 60:
+    while running_state == 1 and rospy.get_rostime().secs - init_time <= 120:
         running_sub
         #rospy.logwarn("Precision Landing...")
         #mav.set_vel(0, 0, 0)
