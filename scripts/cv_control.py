@@ -53,53 +53,50 @@ class VisCon():
         self.scale_factor = 1
         self.is_losted = True
         self.last_time = time.time()
-        # PIDs
-       
-        '''self.pid_x = PID(-0.17, -0.01, -0.1)         
-        self.pid_y = PID(0.17, 0.01, 0.1)
-        self.pid_z = PID(-0.2, -0.005, -0.001)# Negative parameters (CV's -y -> Frame's +z)
-        self.pid_w = PID(0, 0, 0) # Orientation'''
-
+        
+        # PIDs 
+        #Parametros Proporcional,Integrativo e Derivativo 
         self.pid_x = PID(-0.2, -0.01, -0.1)         
         self.pid_y = PID(0.2, 0.01, 0.1)
         self.pid_z = PID(-0.2, -0.005, -0.001)# Negative parameters (CV's -y -> Frame's +z)
-        self.pid_w = PID(0, 0, 0) # Orientation'''
-                
+        self.pid_w = PID(0, 0, 0) # Orientation
+
+        #Limitacao da saida        
         self.pid_x.output_limits = self.pid_y.output_limits = (-0.2, 0.2) # output value will be between -0.3 and 0.3
         self.pid_z.output_limits = (-0.15, 0.15)  # output value will be between -0.8 and 0.8
 
-
     def local_callback(self, local):
+        #Posicao atual do drone
         self.drone_pose.pose.position.x = local.pose.position.x
         self.drone_pose.pose.position.y = local.pose.position.y
         self.drone_pose.pose.position.z = local.pose.position.z
         
     def running_callback(self, bool):
+        #Variavel alterada em run_h_mission para iniciar a deteccao do H
         rospy.logwarn("Recebendo info do topicode cv")
         self.running_state = bool.data
 
-
-    
     def set_goal_pose(self, x, y, z, w):
+        #Posicao que o PID tera como objetivo 
         self.pid_x.setpoint = -240.0/2 # y size
         self.pid_y.setpoint = 320.0/2 # x
         self.pid_z.setpoint = 0.2 # 
         self.pid_w.setpoint = 0 # orientation
 
     def set_goal_vel(self, vx, vy, vz, vw):
+        #Altera as componentes de velocidade do drone
         self.velocity.twist.linear.x = vx
         self.velocity.twist.linear.y = vy
         self.velocity.twist.linear.z = vz
         self.velocity.twist.angular.z = vw # not volkswagen
 
     def detection_callback(self, vector_data):
+        #Dados enviados pelo H.cpp -> Centro do H e Proximidade do H (Area ratio)
         self.detection = vector_data
         self.last_time = time.time()
-        # rospy.loginfo(self.velocity) # debug
-        #rospy.loginfo(self.detection.area_ratio)
-
-
+ 
     def set_position(self, x, y, z):
+        #Define o objetivo de posicao do drone
         self.goal_pose.pose.position.x = x
         self.goal_pose.pose.position.y = y
         self.goal_pose.pose.position.z = z
@@ -129,20 +126,23 @@ class VisCon():
         return config
 
     def run(self):
-        r = 0
-        teta = 0
-        self.set_goal_pose(0, 0, 0, 0) #Nao lembro o pq disso aqui
-        last_x = self.drone_pose.pose.position.x
+        #Inicializacao das variaveis usadas caso o drone perca o H
+        r = 0                                        #Inicia valor para o raio da espiral 
+        teta = 0                                     #Inicia valor para o teta da espiral 
+        last_x = self.drone_pose.pose.position.x    
         last_y = self.drone_pose.pose.position.y
         last_z = self.drone_pose.pose.position.z
+
+        self.set_goal_pose(0, 0, 0, 0) #Config do PID
+
         while not rospy.is_shutdown():
             self.pose
             self.delay = time.time() - self.last_time
-            if self.running_state:
+            if self.running_state:  #Condicao alterada no run_h_mission
                 self.delay = time.time() - self.last_time
-                self.is_losted = self.delay > 5
-                if not self.is_losted:
-                    if self.detection.area_ratio < 0.1:
+                self.is_losted = self.delay > 5 
+                if not self.is_losted:  
+                    if self.detection.area_ratio < 0.1: #Drone ainda esta longe do H
                         r = 0
                         teta = 0
                         rospy.loginfo("PID...")
@@ -150,31 +150,29 @@ class VisCon():
                         self.velocity.twist.linear.y = self.pid_y(self.detection.center_x)
                         self.velocity.twist.linear.z = self.pid_z(-self.detection.area_ratio) # PID z must have negative parameters
                         self.velocity.twist.angular.z = 0       # TODO implement self.pid_w(orientation) 
+                        #Armazena ultima posicao em que o drone nao estava perdido
                         last_x = self.drone_pose.pose.position.x
                         last_y = self.drone_pose.pose.position.y
                         last_z = self.drone_pose.pose.position.z
               
                     else:
+                        #Caso o drone esteja suficientemente perto do H
                         rospy.loginfo("Fim controle...")
-                        self.cv_control_publisher.publish(Bool(False))
+                        self.cv_control_publisher.publish(Bool(False)) #Volta para o run_h_mission
 
                     self.vel_pub.publish(self.velocity)
 
-                else:                                       # Assume velocity message will be treated
+                else:  #Drone perdeu o H
                     #rospy.loginfo("Timeout: {}".format(str(self.delay))
-                    ''' if (last_z >= 0.8):
-                        ### Fazer espiral grande ###
-                        rospy.loginfo("Fazendo espiral grande")
-                        r += 0.004
-                    else:'''
-                        ### Fazer espiral ###
+                    ### Fazer espiral ###
                     rospy.loginfo("Fazendo espiral pequena")
-                    r += 0.002
+                    #Funcao de espiral e volta para dois metros de altura
+                    r += 0.002  
                     teta += 0.03
                     x = last_x - r * math.cos( teta ) 
                     y = last_y - r * math.sin( teta )
                     self.set_position(x,y,2)
-                    if (r > 1):
+                    if (r > 1.5):   #limita o tamanho da espiral
                         r = 0
 
             self.rate.sleep()
