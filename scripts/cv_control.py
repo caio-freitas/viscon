@@ -129,7 +129,9 @@ class VisCon():
         return config
 
     def run(self):
-        self.set_goal_pose(0, 0, 0, 0)
+        r = 0
+        teta = 0
+        self.set_goal_pose(0, 0, 0, 0) #Nao lembro o pq disso aqui
         last_x = self.drone_pose.pose.position.x
         last_y = self.drone_pose.pose.position.y
         last_z = self.drone_pose.pose.position.z
@@ -160,18 +162,20 @@ class VisCon():
 
                 else:                                       # Assume velocity message will be treated
                     #rospy.loginfo("Timeout: {}".format(str(self.delay))
-                    if (last_z >= 0.8):
+                    ''' if (last_z >= 0.8):
                         ### Fazer espiral grande ###
                         rospy.loginfo("Fazendo espiral grande")
                         r += 0.004
-                    else:
-                        ### Fazer espiral pequena ###
-                        rospy.loginfo("Fazendo espiral pequena")
-                        r += 0.001
+                    else:'''
+                        ### Fazer espiral ###
+                    rospy.loginfo("Fazendo espiral pequena")
+                    r += 0.002
                     teta += 0.03
                     x = last_x - r * math.cos( teta ) 
                     y = last_y - r * math.sin( teta )
-                    self.set_position(x,y,last_z)
+                    self.set_position(x,y,2)
+                    if (r > 1):
+                        r = 0
 
             self.rate.sleep()
 
