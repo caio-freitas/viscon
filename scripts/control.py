@@ -19,10 +19,10 @@ class VisCon():
         self.rate = rospy.Rate(60)
         self.running = False
         # ROS Parameters
-        #self.vel_topic = rospy.get_param("/vel_topic")
-        self.vel_topic = "/tello/cmd_vel"
-        #self.pose_topic = rospy.get_param("/pose_topic")
-        self.pose_topic = "/orb_slam2_mono/pose"
+        self.vel_topic = rospy.get_param("/vel_topic")
+        #self.vel_topic = "/tello/cmd_vel"
+        self.pose_topic = rospy.get_param("/pose_topic")
+        #self.pose_topic = "/orb_slam2_mono/pose"
         # self.pid_config_file = rospy.get_param("~pid_config_file")
         # self.calibrate_pid = rospy.get_param('~calibrate_pid',False)
 

@@ -1,0 +1,5 @@
+<launch>
+  <rosparam command="load" file="$(find viscon)/config/tello_topics.yaml" />
+  <rosparam command="load" file="$(find viscon)/config/slam_topics.yaml" />
+  <node pkg="viscon" name="visual_simple_pid" type="control.py" output="screen"/>
+</launch>

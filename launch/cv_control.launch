@@ -1,0 +1,7 @@
+<launch>
+    <rosparam command="load" file="$(find viscon)/config/mavros_params.yaml"/>
+    <param name="/vel_topic" value="/mavros/setpoint_velocity/cmd_vel"/>
+    <node pkg="viscon" name="h_mission" type="run_h_mission.py" output="screen"/>
+    <node pkg="cv_detection" name="h_node" type="h_node" output="screen"/>
+    <node pkg="viscon" name="cv_control_h" type="cv_control.py" output="screen"/>
+</launch>

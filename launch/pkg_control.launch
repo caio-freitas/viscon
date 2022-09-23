@@ -1,0 +1,5 @@
+<launch>
+    <rosparam command="load" file="$(find viscon)/config/mavros_params.yaml"/>
+    <param name="/vel_topic" value="/mavros/setpoint_velocity/cmd_vel"/>
+    <node pkg="viscon" name="pkg_control" type="pkg_delivery.py" output="screen"/>
+</launch>
